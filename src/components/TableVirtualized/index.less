@@ -1,0 +1,38 @@
+@import '~antd/lib/style/themes/default.less';
+
+
+:global {
+  .ant-layout {
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+}
+.rulerTable{
+    :global{
+      .ant-list-header{
+        background-color: #fafafa;
+        color:rgba(0, 0, 0, 0.85);
+        padding:8px 16px;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .ant-list-item{
+        padding: 8px 16px;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .ant-row {
+        &>div{
+          padding: 8px 0;
+        }
+      }
+    }
+
+  .tableHeader{
+
+  }
+}
+
+@media only screen and (max-width: @screen-md) {
+
+}
