@@ -4,14 +4,75 @@ import WindowScroller from 'react-virtualized/dist/commonjs/WindowScroller';
 import AutoSizer from 'react-virtualized/dist/commonjs/AutoSizer';
 import VList from 'react-virtualized/dist/commonjs/List';
 import InfiniteLoader from 'react-virtualized/dist/commonjs/InfiniteLoader';
+import { enquireScreen, unenquireScreen } from 'enquire-js';
+
 import styles from './index.less';
 
 export default class TableVirtualized extends PureComponent {
-  componentWillUnmount() {}
+  state = {
+    index: 4
+  }
+  componentDidMount() {
+    this.enquireHandler = enquireScreen(b => {
+      if (b) {
+        this.setState({
+          index: 3
+        })
+      } else {
+        this.setState({
+          index: 4
+        })
+      }
+		},'only screen and (max-width: 1199.99px)');
 
+		this.enquireHandler2 = enquireScreen(b => {
+      if (b) {
+        this.setState({
+          index: 2
+        })
+      } else {
+        this.setState({
+          index: 3
+        })
+      }
+
+		},'only screen and (max-width: 991.99px)');
+
+		this.enquireHandler3 = enquireScreen(b => {
+      if (b) {
+        this.setState({
+          index: 1
+        })
+      } else {
+        this.setState({
+          index: 2
+        })
+      }
+		},'only screen and (max-width: 767.99px)');
+
+		this.enquireHandler4 = enquireScreen(b => {
+      if (b) {
+        this.setState({
+          index: 0
+        })
+      } else {
+        this.setState({
+          index: 1
+        })
+      }
+		},'only screen and (max-width: 575.99px)');
+
+  }
+  componentWillUnmount() {
+    unenquireScreen(this.enquireHandler)
+    unenquireScreen(this.enquireHandler2)
+    unenquireScreen(this.enquireHandler3)
+    unenquireScreen(this.enquireHandler4)
+  }
   render() {
     const { columns, dataSource, rowHeight, isRowLoaded = () => {}, loadMoreRows= () => {}} = this.props;
-
+    const { index } = this.state
+    const rowH = rowHeight[index]
     const header = (
       <Row gutter={12} style={{width: '100%'}} className={styles.tableHeader}>
         {
@@ -29,7 +90,13 @@ export default class TableVirtualized extends PureComponent {
           {
               columns.map( item => (
                 <Col {...item.width} key={item.key}>
-                  {item.dataIndex ? <span>{data[item.dataIndex]}</span> : item.render(data)}
+                  {index ? '' : <List.Item.Meta
+                    title={
+                      <span title={item.title}>
+                        {item.title}
+                      </span>
+                    }/>}
+                    {item.dataIndex ? <span>{data[item.dataIndex]}</span> : item.render(data)}
                 </Col>
               ))
           }
@@ -55,7 +122,7 @@ export default class TableVirtualized extends PureComponent {
         onScroll={onChildScroll}
         overscanRowCount={0}
         rowCount={rowCount}
-        rowHeight={rowHeight}
+        rowHeight={rowH}
         rowRenderer={rowRenderer}
         onRowsRendered={onRowsRendered}
         scrollTop={scrollTop}
@@ -81,7 +148,7 @@ export default class TableVirtualized extends PureComponent {
 
     return (
       <div className={styles.rulerTable}>
-        <List header = {header}>
+        <List header = {index ? header : ''}>
           <WindowScroller>
             {infiniteLoader}
           </WindowScroller>

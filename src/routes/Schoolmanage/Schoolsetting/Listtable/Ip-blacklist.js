@@ -21,7 +21,7 @@ const { TextArea } = Input;
 @Form.create()
 
 export default class Ipblacklsit extends Component{
-	
+
 	state = {
 		loading:true,
 		listData:[{
@@ -60,10 +60,10 @@ export default class Ipblacklsit extends Component{
 			defaultPageSize:10,
 			hideOnSinglePage:true,
 			defaultCurrent:1,
-			showTotal:total => "共 400 条记录 第 1 / 80 页 ",
-			total:50
+			showTotal: total => "共 400 条记录 第 1 / 80 页 ",
+			total: 50
 		},
-		selectData:{},                         //选中内容         
+		selectData:{},                         //选中内容
 		visible: false,                        //弹窗显示
     	confirmLoading: false,                 //弹窗确认按钮loading
 	};
@@ -152,7 +152,7 @@ export default class Ipblacklsit extends Component{
 	      </Form>
 	    );
 	}
-	
+
 	//添加部分
 	renderAddBlackList(prop){
 		const { visible,confirmLoading } = this.state;
@@ -203,11 +203,11 @@ export default class Ipblacklsit extends Component{
 	        </Modal>
 		)
 	}
-	
+
 	componentDidMount() {
 	    this.fetch();
 	}
-	
+
 	render(){
 		const { global } = this.props;
 	    const { lang = 'zhCN', home } = global;
@@ -242,12 +242,12 @@ export default class Ipblacklsit extends Component{
 				title: texts.title[0],
 				dataIndex: 'time',
 				width:"20%"
-			}, 
+			},
 			{
 				title: texts.title[1],
 				dataIndex: 'address',
 				align:'center',
-			}, 
+			},
 			{
 				title: texts.title[2],
 			 	dataIndex: 'remarks',
@@ -265,7 +265,7 @@ export default class Ipblacklsit extends Component{
 		const rowSelection = {
 		  	onChange: (selectedRowKeys, selectedRows) => {
 		    	console.log(selectedRowKeys);
-		    	console.log(selectedRows) 
+		    	console.log(selectedRows)
 		    	this.setState({
 		    		selectData:selectedRows
 		    	})
@@ -275,13 +275,13 @@ export default class Ipblacklsit extends Component{
 		    	name: record.name,
 		  	}),
 		};
-		
+
 		return(
 			<div>
 				{this.renderSearchForm(texts)}
 				<Table rowSelection={rowSelection} columns={columns} dataSource={listData} loading={loading} pagination={pagination} onChange={this.pageChange} />
 				{this.renderAddBlackList(texts)}
-			</div>	
+			</div>
 		)
 	}
 }

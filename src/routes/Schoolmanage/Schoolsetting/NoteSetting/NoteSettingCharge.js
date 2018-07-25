@@ -1,7 +1,6 @@
 import React, { Component, Fragment } from 'react';
 import { connect } from "dva";
 import moment from 'moment';
-import { enquireScreen, unenquireScreen } from 'enquire-js';
 import { 
   Row,
   Col,
@@ -14,6 +13,8 @@ import {
   Select,
   DatePicker,
   Pagination,
+  Avatar,
+  Radio,
  } from "antd";
  import { 
    WaterWave,
@@ -28,6 +29,7 @@ import { Note } from "./zhCN-enGB";
 const { TabPane } = Tabs;
 const FormItem = Form.Item;
 const { Option } = Select;
+const { RadioGroup } = Radio;
 const { RangePicker } = DatePicker; //开始结束时间
 const status = ['线上充值-支付宝','线上充值-微信','线下充值-其他','系统赠送-其他'];
 
@@ -53,11 +55,6 @@ export default class SearchList extends Component {
   }
   
   componentDidMount() {
-		this.enquireHandler = enquireScreen(b => {
-		  this.setState({
-				isMobile : b
-			})
-		},'only screen and (max-width: 767.99px)');
     const { dispatch } = this.props;
     dispatch({
       type: 'chart/fetch',
@@ -68,7 +65,6 @@ export default class SearchList extends Component {
   }
 
   componentWillUnmount() {
-    unenquireScreen(this.enquireHandler)
     const { dispatch } = this.props;
     dispatch({
       type: 'chart/clear',
@@ -93,6 +89,14 @@ export default class SearchList extends Component {
     
     this.setState({
       visibel: false
+    });
+  }
+  handleSearchCharge = e => {
+    e.preventDefault();
+    const { dispatch, form } = this.props;
+    form.validateFields((err,fieldsValue) => {
+      if (err) return;
+      //...
     });
   }
 
@@ -133,10 +137,10 @@ export default class SearchList extends Component {
   }
 
   //表单
-  Standard ({ list, columns, pagination:{ total, current, pageSize }}) {
+  Standard ({ width, list, columns, pagination:{ total = 0, current = 0, pageSize = 0 }}) {
     return (
       <div >
-        <TableVirtualized columns={columns} dataSource={list} rowHeight={this.state.isMobile ? 200:76} />
+        <TableVirtualized columns={columns} dataSource={list} rowHeight={width} />
         <Pagination 
           showSizeChanger
           showQuickJumper
@@ -158,27 +162,11 @@ export default class SearchList extends Component {
   handleStandardTableChange = (current, pageSize) => {
     const { dispatch } = this.props;
     const { formValues } = this.state;
-    console.log(current);
-    console.log(pageSize);
-    
-    
-    // const filters = Object.keys(filtersArg).reduce((obj, key) => {
-    //   const newObj = { ...obj };
-    //   newObj[key] = getValue(filtersArg[key]);
-    //   return newObj;
-    // }, {});
-
     const params = {
       currentPage: current,
       pageSize: pageSize,
       ...formValues,
-      // ...filters,
     };
-    // if (sorter.field) {
-    //   params.sorter = `${sorter.field}_${sorter.order}`;
-    // }
-    console.log(params);
-    
     dispatch({
       type: 'rule/fetch',
       payload: params,
@@ -206,79 +194,98 @@ export default class SearchList extends Component {
     //语言切换
     const texts = Note(lang);
     //列表(Pc端列表样式)
-    const columnsPc = [
-      {
-        title: '时间',
-        render: (val) => (<span>{moment(val.createdAt).format('YYYY-MM-DD HH:mm:ss')}</span>),
-        key: '1',
-        width: { xl: 6, lg: 6, md: 6, sm: 6}
-      },
-      {
-        title: '充值条数',
-        dataIndex: 'callNo',
-        key: '2',
-        width: { xl: 4, lg: 4, md: 4, sm: 4}
-      },
-      {
-        title: '支付方式',
-        render: (val) => (<span>{this.Payment(val.status)}</span>),
-        key: '3',
-        width: { xl: 6, lg: 6, md: 6, sm: 6 }
-      },
-      {
-        title: '金额',
-        dataIndex: 'callNo',
-        key: '4',
-        width: { xl: 5, lg: 5, md: 5, sm: 5 }
-      },
-      {
-        title: '结余 (条)',
-        dataIndex: 'callNo',
-        key: '5',
-        width: { xl: 3, lg: 3, md: 3, sm: 3 }
-      },
-    ];
-    //列表(手机端列表样式)
-    const columnsIphone = [
-      {
-        render: (val) => (<span>时间 : {moment(val.createdAt).format('YYYY-MM-DD HH:mm:ss')}</span>),
-        key: '1',
-        width: { xs: 24 }
-      },
-      {
-        render: (val) => (<span>充值条数 : {val.callNo}</span>),
-        key: '2',
-        width: { xs: 24 }
-      },
-      {
-        render: (val) => (<span>支付方式 : {this.Payment(val.status)}</span>),
-        key: '3',
-        width: { xs: 24 }
-      },
-      {
-        render: (val) => (<span> 金额 : {val.callNo}</span>),
-        key: '4',
-        width: { xs: 24 }
-      },
-      {
-        render: (val) => (<span>结余 (条) : {val.callNo}</span>),
-        key: '5',
-        width: { xs: 24 }
-      },
-    ];
-    //通过this.state.isMobile判断是否是手机端
-    let columns = this.state.isMobile ? columnsIphone : columnsPc;
+    const columns = {
+      chargeList: [
+        {
+          title: '时间',
+          render: (val) => (<span>{moment(val.createdAt).format('YYYY-MM-DD HH:mm:ss')}</span>),
+          key: '1',
+          width: { xl: 6, lg: 6, md: 6, sm: 6, xs: 16}
+        },
+        {
+          title: '充值条数',
+          dataIndex: 'callNo',
+          key: '2',
+          width: { xl: 4, lg: 4, md: 4, sm: 4, xs: 8}
+        },
+        {
+          title: '支付方式',
+          render: (val) => (<span>{this.Payment(val.status)}</span>),
+          key: '3',
+          width: { xl: 6, lg: 6, md: 6, sm: 6 , xs: 16}
+        },
+        {
+          title: '金额',
+          dataIndex: 'callNo',
+          key: '4',
+          width: { xl: 5, lg: 5, md: 5, sm: 5 , xs: 8}
+        },
+        {
+          title: '结余 (条)',
+          dataIndex: 'callNo',
+          key: '5',
+          width: { xl: 3, lg: 3, md: 3, sm: 3 , xs: 24}
+        },
+      ],
+      consumptionList: [
+        {
+          title: '时间',
+          render: (val) => (<span>{moment(val.createdAt).format('YYYY-MM-DD HH:mm:ss')}</span>),
+          key: '1',
+          width: { xl: 4, lg: 4, md: 4, sm: 8, xs: 8}
+        },
+        {
+          title: '账号',
+          render: (record) => (
+            <span>
+              <Avatar src={record.avatar} size="large" style={{float:'left',marginRight:'8px'}}/>
+              <span style={{float:'left'}}>{record.owner}</span><img src={require('../../../../../public/man.png')}/><br/>
+              <span style={{float:'left'}}>{record.description}</span>
+            </span>
+          ),
+          key: '2',
+          width: { xl: 7, lg: 7, md: 7, sm: 8, xs: 16}
+        },
+        {
+          title: '消费条数',
+          render: (val) => (<span style={{lineHeight:'42px'}}>{val.callNo}</span>),
+          key: '3',
+          width: { xl: 2, lg: 2, md: 2, sm: 8, xs: 8}
+        },
+        {
+          title: '功能模块',
+          render: (val) => (<span style={{lineHeight:'18px',display: 'inline-block',marginTop: '10px'}}>{val.description}</span>),
+          key: '4',
+          width: { xl: 3, lg: 3, md: 3, sm: 8, xs: 16 }
+        },
+        {
+          title: '描述',
+          render: (val) => (<span style={{lineHeight:'18px',display: 'inline-block',marginTop: '10px'}}>{val.description}</span>),
+          key: '5',
+          width: { xl: 6, lg: 6, md: 6, sm: 8, xs: 24 }
+        },
+        {
+          title: '剩余条数',
+          render: (val) => (<span style={{lineHeight:'42px'}}>{val.callNo}</span>),
+          key: '6',
+          width: { xl: 2, lg: 2, md: 2, sm: 8, xs: 24 }
+        },
+      ]
+    };
     const chargeMessage = {
       loading: loading,
-      columns: columns,
+      columns: columns.chargeList,
       ...data,
+      width: [200,76,76,76,76]
     }
-    console.log(chargeMessage);
     
     const consumptionMessage = {
-
+      loading: loading,
+      columns: columns.consumptionList,
+      ...data,
+      width: [320,120,76,76,76]
     }
-    //充值表单
+    //充值搜索
     const { getFieldDecorator } = form;
     const ChargeForm = (
       <Form onSubmit={this.handleSearch} layout="inline">
@@ -311,7 +318,7 @@ export default class SearchList extends Component {
         </Row>
       </Form>
     );
-    //消费
+    //消费搜索
     const ConsumptionForm = (
       <Form onSubmit={this.handleSearch} layout="inline">
         <Row gutter={24}>
@@ -333,6 +340,48 @@ export default class SearchList extends Component {
         </Row>
       </Form>
     );
+    //充值弹窗表单
+    const chargeForm = (
+      <Form onSubmit={this.handleSearchCharge} layout="inline">
+        <Row gutter={24} style={{borderBottom: '1px solid rgba(0,0,0,0.2)'}}>
+          <Col sm={8} md={8} lg={8} xl={8} style={{textAlign: 'right'}}>
+            充值数量：
+          </Col>
+          <Col sm={16} md={16} lg={16} xl={16}>
+            <Row>
+              <Col sm={8} md={8} lg={8} xl={8}><Button>5000条</Button></Col>
+              <Col sm={8} md={8} lg={8} xl={8}><Button>10000条</Button></Col>
+              <Col sm={8} md={8} lg={8} xl={8}><Button>100000条</Button></Col>
+            </Row>
+            <Row>
+              <Col sm={12} md={12} lg={12} xl={12}>
+                <FormItem>
+                  { getFieldDecorator('otherNumber')(<Input placeholder="输入其他数量"/>)}
+                </FormItem>
+              </Col>
+            </Row>
+          </Col>
+        </Row>
+        <Row style={{padidng: '30px'}}>
+          <Col>
+            金额： <b>500.00</b> 元
+          </Col>
+        </Row>
+        <Row>
+          <Col>
+            {/* <FormItem label="支付方式：">
+              { getFieldDecorator('payWay')(
+                <RadioGroup>
+                  <Radio value="a">item 1</Radio>
+                  <Radio value="b">item 2</Radio>
+                </RadioGroup>
+              )}
+            </FormItem> */}
+          </Col>
+        </Row>
+
+      </Form>
+    )
     return (
         <PageHeaderLayout title={texts.title} content={texts.connect} home={home}>
           <div className={styles.note}>
@@ -352,9 +401,7 @@ export default class SearchList extends Component {
                     onOk={this.OnOk.bind(this)}
                     visible={this.state.visibel}
                   >
-                    <p>Some contents...</p>
-                    <p>Some contents...</p>
-                    <p>Some contents...</p>
+                    {chargeForm}
                   </Modal>
                   <WaterWave height={161} title={texts.messageResidue} remain={26455} percent={56} />
                 </Card>
@@ -375,7 +422,7 @@ export default class SearchList extends Component {
                   </TabPane>
                   <TabPane tab="消费记录" key="2">
                     { ConsumptionForm }
-                    {/* {this.Standard(consumptionMessage)} */}
+                    {this.Standard(consumptionMessage)}
                   </TabPane>
                 </Tabs>
               </Col>

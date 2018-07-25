@@ -27,7 +27,7 @@ import {
   Table,
 } from 'antd';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
-import { enquireScreen, onlyenquireScreen, unenquireScreen } from 'enquire-js';
+import { enquireScreen, unenquireScreen } from 'enquire-js';
 import { getTimeString, getTimeDay } from '../../utils/utils';
 import Ellipsis from 'components/Ellipsis';
 import WindowScroller from 'react-virtualized/dist/commonjs/WindowScroller';
@@ -65,11 +65,11 @@ export default class SchoolList extends PureComponent {
   };
   loadedRowsMap = {};
   componentDidMount() {
-    this.enquireHandler = onlyenquireScreen(mobile => {
+    this.enquireHandler = enquireScreen(mobile => {
       this.setState({
         isMobile: mobile,
       });
-    });
+    }, 'only screen and (max-width: 576.99px)');
 
     const { dispatch } = this.props;
     dispatch({

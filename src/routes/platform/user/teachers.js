@@ -18,7 +18,6 @@ import {
   Avatar,
 } from 'antd';
 import TableVirtualized from '../../../components/TableVirtualized';
-import { enquireScreen, unenquireScreen } from 'enquire-js';
 import styles from './user.less';
 
 const FormItem = Form.Item;
@@ -518,40 +517,9 @@ export default class UserTeachers extends Component {
   state = {
     visible: false,
     confirmLoading: false,
-    isMobile:false,
-    isMobile2:false,
-    isMobile3:false,
-    isMobile4:false,
-    isMobile5:false,
   };
 
   componentDidMount() {
-		this.enquireHandler = enquireScreen(b => {
-			this.setState({
-				isMobile : b
-			})
-		  
-		},'only screen and (max-width: 1200.99px)');
-		this.enquireHandler2 = enquireScreen(b => {
-		  this.setState({
-				isMobile2 : b
-			})
-		},'only screen and (max-width: 992.99px)');
-		this.enquireHandler3 = enquireScreen(b => {
-		  this.setState({
-				isMobile3 : b
-			})
-		},'only screen and (max-width: 768.99px)');
-		this.enquireHandler4 = enquireScreen(b => {
-		  this.setState({
-				isMobile4 : b
-			})
-		},'only screen and (max-width: 576.99px)');
-		this.enquireHandler5 = enquireScreen(b => {
-		  this.setState({
-				isMobile5 : b
-			})
-		},'only screen and (max-width: 0.99px)');
     const { dispatch } = this.props;
     dispatch({
       type: 'rule/fetch',
@@ -561,14 +529,8 @@ export default class UserTeachers extends Component {
       }
     });
   }
-	componentWillUnmount() {
-		unenquireScreen(this.enquireHandler)
-		unenquireScreen(this.enquireHandler2)
-		unenquireScreen(this.enquireHandler3)
-		unenquireScreen(this.enquireHandler4)
-		unenquireScreen(this.enquireHandler5)
-	}
-	
+	componentWillUnmount() {	}
+
   showModal = (e, item) => {
     const { form } = this.props;
 
@@ -822,7 +784,7 @@ export default class UserTeachers extends Component {
 
     return (
       <div >
-        <TableVirtualized columns={columns} dataSource={data} rowHeight={this.state.isMobile ? this.state.isMobile2 ? this.state.isMobile3 ? this.state.isMobile4 ? this.state.isMobile5 ? 76:306:190:190:130:76} />
+        <TableVirtualized columns={columns} dataSource={data} rowHeight={[430,190,190,130,76]} />
       </div>
     )
   }

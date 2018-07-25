@@ -13,112 +13,261 @@ import {
   Col,
   Button,
   Modal,
+  Select,
+  Spin,
+  Cascader
 } from 'antd';
 import styles from './module.less';
-
+const { TextArea } = Input;
 const FormItem = Form.Item;
-const data = [
-  {
-    key: 1,
-    name: 'John Brown sr.',
-    age: 60,
-    address: 'New York No. 1 Lake Park',
-    children: [
-      {
-        key: 11,
-        name: 'John Brown',
-        age: 42,
-        address: 'New York No. 2 Lake Park',
-      },
-      {
-        key: 12,
-        name: 'John Brown jr.',
-        age: 30,
-        address: 'New York No. 3 Lake Park',
-        children: [
-          {
-            key: 121,
-            name: 'Jimmy Brown',
-            age: 16,
-            address: 'New York No. 3 Lake Park',
-          },
-        ],
-      },
-      {
-        key: 13,
-        name: 'Jim Green sr.',
-        age: 72,
-        address: 'London No. 1 Lake Park',
-        children: [
-          {
-            key: 131,
-            name: 'Jim Green',
-            age: 42,
-            address: 'London No. 2 Lake Park',
-            children: [
-              {
-                key: 1311,
-                name: 'Jim Green jr.',
-                age: 25,
-                address: 'London No. 3 Lake Park',
-              },
-              {
-                key: 1312,
-                name: 'Jimmy Green sr.',
-                age: 18,
-                address: 'London No. 4 Lake Park',
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    key: 2,
-    name: 'Joe Black',
-    age: 32,
-    address: 'Sidney No. 1 Lake Park',
-  },
-];
+const Option = Select.Option;
 
-@connect(({ global }) => ({ global }))
+@connect(({ global, module }) => ({ global, module }))
 @Form.create()
 export default class ModuleList extends Component {
   state = {
-    visible: false,
+    visibleModule: false,
+    visibleUpdateModule: false,
     confirmLoading: false,
+    loading: false
   };
 
-  componentDidMount() {}
+  componentDidMount() {
+    this.getList()
+  }
 
-  showModal = () => {
+  componentWillUnmount(){
+
+  }
+
+  getList () {
+    const { dispatch, form } = this.props;
     this.setState({
-      visible: true,
+      loading: true
+    })
+
+    let params = {
+      rightsName: form.getFieldValue('keywords')
+    }
+
+    dispatch({
+      type: 'module/fetch',
+      payload: params,
+      callback: (res) => {
+        this.setState({
+          loading: false
+        })
+      }
     });
-  };
+  }
+
+
+// ------ handle event-------
+  handleQuery = () => {
+    this.getList()
+  }
+
+  handleReset = () => {
+    const { form } = this.props;
+    form.resetFields(['keywords']);
+    this.getList()
+  }
+
+  showModal = (e, item) => {
+    const { form } = this.props;
+
+    form.resetFields(['parentModule', 'moduleCode', 'chinaName', 'chinaExplain', 'engbName', 'engbExplain', 'moduleAddress']);
+
+    if (item) {
+
+      let parentSequence = []
+      for (let i = 1, len = item.rightsSequence.length; i < len - 2; i = i + 2) {
+        let str = item.rightsSequence[i - 1] + '' + item.rightsSequence[i]
+        parentSequence.push(str)
+      }
+      form.setFields({
+        parentModule: {
+          value: parentSequence.length ? parentSequence : ['']
+        }
+      });
+
+    } else {
+
+      form.setFields({
+        parentModule: {
+          value: ['']
+        }
+      });
+
+    }
+
+    this.setState({
+      visibleModule: true,
+    })
+
+  }
+
+  showUpdateModal = (e, item) => {
+    this.rightsId = item.rightsId
+    const { form } = this.props;
+
+    form.resetFields(['parentModule', 'moduleCode', 'chinaName', 'chinaExplain', 'engbName', 'engbExplain', 'moduleAddress']);
+    let parentSequence = []
+    let Sequence = item.rightsSequence
+    for (let i = 1, len = item.rightsSequence.length; i < len; i = i + 2) {
+      let str = item.rightsSequence[i - 1] + '' + item.rightsSequence[i]
+      if (i == len - 1) {
+        Sequence = str
+      } else {
+        parentSequence.push(str)
+      }
+    }
+
+    form.setFields({
+      parentModule: {
+        value: parentSequence.length ? parentSequence : ['']
+      },
+      moduleCode: {
+        value: Sequence
+      },
+      chinaName: {
+        value: item.rightsName
+      },
+      chinaExplain: {
+        value: item.description
+      },
+      engbName: {
+        value: item.rightsNameEnglish
+      },
+      engbExplain: {
+        value: item.descriptionEnglish
+      },
+      moduleAddress: {
+        value: item.rightsUrl
+      }
+    });
+
+    this.setState({
+      visibleUpdateModule: true,
+    })
+
+  }
+
+  handleDelete = (e, item) => {
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'module/deleteFetch',
+      payload: {
+        rightsId: item.rightsId
+      },
+      callback: (res) => {
+        this.getList()
+      }
+    });
+
+  }
+
+  // ----- visibleModule --------
+
 
   handleOk = () => {
-    this.setState({
-      ModalText: 'The modal will be closed after two seconds',
-      confirmLoading: true,
-    });
-    setTimeout(() => {
+    const { dispatch, form } = this.props;
+
+    form.validateFields(['parentModule', 'moduleCode', 'chinaName', 'chinaExplain', 'engbName', 'engbExplain', 'moduleAddress'], (err, fieldsValue) => {
+
+      if (err) return;
+
       this.setState({
-        visible: false,
-        confirmLoading: false,
+        confirmLoading: true,
+      })
+
+      const { parentModule, moduleCode, chinaName, chinaExplain, engbName, engbExplain, moduleAddress} = fieldsValue
+
+      let num = ''
+
+      for( let i = 0, len = parentModule.length; i < len; i++ ) {
+        num += '' + parentModule[i]
+      }
+
+      const params = {
+        rightsSequence: num + '' + moduleCode,
+        rightsName: chinaName,
+        description: chinaExplain,
+        rightsNameEnglish: engbName,
+        descriptionEnglish: engbExplain,
+        rightsUrl: moduleAddress
+      }
+
+      dispatch({
+        type: 'module/addFetch',
+        payload: params,
+        callback: (res) => {
+          this.setState({
+            visibleModule: false,
+            confirmLoading: false,
+          })
+          this.getList()
+        }
       });
-    }, 2000);
-  };
+    })
+  }
 
   handleCancel = () => {
-    console.log('Clicked cancel button');
     this.setState({
-      visible: false,
-    });
-  };
+      visibleModule: false,
+    })
+  }
 
-  // 搜索栏表单控件 封装好的媒体查询  xl={4} lg={4} md={4} sm={4} xs={4}
+  handleUpdateOk = () => {
+    const { dispatch, form } = this.props;
+
+    form.validateFields(['parentModule', 'moduleCode', 'chinaName', 'chinaExplain', 'engbName', 'engbExplain', 'moduleAddress'], (err, fieldsValue) => {
+
+      if (err) return;
+
+      this.setState({
+        confirmLoading: true,
+      })
+
+      const { parentModule, moduleCode, chinaName, chinaExplain, engbName, engbExplain, moduleAddress} = fieldsValue
+
+      let num = ''
+
+      for( let i = 0, len = parentModule.length; i < len; i++ ) {
+        num += '' + parentModule[i]
+      }
+
+      const params = {
+        rightsId: this.rightsId,
+        rightsSequence: num + '' + moduleCode,
+        rightsName: chinaName,
+        description: chinaExplain,
+        rightsNameEnglish: engbName,
+        descriptionEnglish: engbExplain,
+        rightsUrl: moduleAddress
+      }
+
+      dispatch({
+        type: 'module/updateFetch',
+        payload: params,
+        callback: (res) => {
+          this.setState({
+            visibleUpdateModule: false,
+            confirmLoading: false,
+          })
+          this.getList()
+        }
+      });
+    })
+  }
+
+  handleUpdateCancel = () => {
+    this.setState({
+      visibleUpdateModule: false,
+    })
+  }
+// ------ render module Dom -------
+  // 搜索栏
   renderSearchForm() {
     const { form } = this.props;
     const { getFieldDecorator } = form;
@@ -127,15 +276,13 @@ export default class ModuleList extends Component {
         <Row className={styles.rowForm}>
           <Col xl={8} lg={10} md={12} sm={24}>
             <FormItem label="关键词">
-              {getFieldDecorator('no')(<Input placeholder="请输入" className={styles.inputbox} />)}
+              {getFieldDecorator('keywords')(<Input placeholder="搜索模块名称、模块地址查询" className={styles.inputbox} />)}
             </FormItem>
           </Col>
           <Col xl={8} lg={10} md={12} sm={24}>
             <span className={styles.buttonBox}>
-              <Button type="primary" htmlType="submit">
-                查询
-              </Button>
-              <Button style={{ marginLeft: 8 }}>重置</Button>
+              <Button onClick={this.handleQuery} type="primary" htmlType="submit">查询</Button>
+              <Button onClick={this.handleReset} style={{ marginLeft: 8 }}>重置</Button>
             </span>
           </Col>
           <Col sm={24}>
@@ -166,67 +313,83 @@ export default class ModuleList extends Component {
     //     break;
     //   default:
     // }
+    const { list: data } = this.props.module
+    const rendermenu = (item) => {
+      return (
+        <Menu>
+          <Menu.Item>
+            <a onClick={(e) => this.showUpdateModal(e, item)}>编辑</a>
+          </Menu.Item>
+          <Menu.Item>
+            <a onClick={(e) => this.handleDelete(e, item)}>删除</a>
+          </Menu.Item>
+        </Menu>
+      )
+    };
 
-    const menu = (
-      <Menu>
-        <Menu.Item>
-          <a>编辑</a>
-        </Menu.Item>
-        <Menu.Item>
-          <a>删除</a>
-        </Menu.Item>
-      </Menu>
-    );
-
-    const MoreBtn = () => (
-      <Dropdown overlay={menu}>
-        <a>
-          更多 <Icon type="down" />
-        </a>
-      </Dropdown>
-    );
+    const renderMoreBtn = (item) => {
+      return (
+        <Dropdown overlay={rendermenu(item)}>
+          <a>
+            更多 <Icon type="down" />
+          </a>
+        </Dropdown>
+      )
+    }
 
     const columns = [
       {
         title: '模块名称',
-        dataIndex: 'name',
-        key: 'name',
+        dataIndex: 'rightsName',
+        key: 'rightsName',
       },
       {
         title: '模块地址',
-        dataIndex: 'address',
-        key: 'address',
+        dataIndex: 'rightsUrl',
+        key: 'rightsUrl',
       },
       {
         title: '代码',
-        dataIndex: 'age',
-        key: 'age',
+        dataIndex: 'rightsSequence',
+        key: 'rightsSequence',
       },
       {
         title: '修改时间',
-        dataIndex: 'address',
-        key: 'address2',
+        dataIndex: 'gmtModified',
+        key: 'gmtModified',
       },
       {
         title: '操作',
         key: 'action',
-        render: () => (
-          //text, record
+        width: '150px',
+        render: (text, record) => (
           <span>
-            <a href="javascript:;">新增</a>
+            <a onClick={(e) => this.showModal(e, record)}  href="javascript:;">新增</a>
             <Divider type="vertical" />
-            <MoreBtn />
+            {renderMoreBtn(record)}
           </span>
         ),
       },
     ];
 
-    return <Table columns={columns} dataSource={data} pagination={false} />;
+    return <Table columns={columns} dataSource={data} pagination={false} loading={this.state.loading} />
   }
   // 新增/编辑模块
   renderAddModal() {
-    const { visible, confirmLoading } = this.state;
+    const { list } = this.props.module
+
+    const data = [{
+      key: 0,
+      rightsId: 0,
+      rightsName: '无',
+      rightsNameEnglish: '无',
+      rightsSequence: ''
+      },...list]
+
+    const { visibleModule, confirmLoading } = this.state;
+
     const { getFieldDecorator } = this.props.form;
+
     const formItemLayout = {
       style: {
         width: '100%',
@@ -242,46 +405,238 @@ export default class ModuleList extends Component {
       },
     };
 
+    // 模块代码校验
+    const validateModuleCode = (rule, value, callback) => {
+
+      if (value && !(/^[0-9]{2}$/.test(value))) {
+        callback('请输入两位0~9的数字')
+      }
+      callback();
+    }
+
     return (
       <Modal
         title="新增模块"
-        visible={visible}
+        visible={visibleModule}
         onOk={this.handleOk}
         confirmLoading={confirmLoading}
         onCancel={this.handleCancel}
+        className={styles.addmodule}
       >
-        <Form layout="inline" className={styles.formCol}>
+        <Form layout="inline" hideRequiredMark className={styles.formCol}>
           <FormItem {...formItemLayout} label="上级模块">
-            {getFieldDecorator('parentModule')(
-              <Input type="text" placeholder="由6-20位英文、数字且字母开头组成" />
-            )}
+              {getFieldDecorator('parentModule')(
+                <Cascader filedNames={{ label: 'rightsName', value: 'rightsSequence', children: 'children' }} options = {data} changeOnSelect = {true}  onChange={this.parentModuleChange} placeholder="选择上级模块" />
+              )}
           </FormItem>
           <FormItem {...formItemLayout} label="代码">
-            {getFieldDecorator('code')(<Input type="password" placeholder="请输入6-18位密码" />)}
+            {getFieldDecorator('moduleCode',  {
+              rules: [
+                {
+                  required: true,
+                  message: '请输入模块代码',
+                },
+                { validator: validateModuleCode}
+              ],
+            })(<Input  placeholder="请输入模块代码" />)}
           </FormItem>
+
           <FormItem {...formItemLayout} label="中文名称">
-            {getFieldDecorator('chinaName')(
-              <Input type="password" placeholder="再次输入密码" onBlur={this.handleConfirmBlur} />
+            {getFieldDecorator('chinaName',  {
+              rules: [
+                {
+                  required: true,
+                  message: '请输入模块中文名称',
+                },
+              ],
+            })(
+              <Input  placeholder="请输入模块中文名称"  />
             )}
           </FormItem>
+
           <FormItem {...formItemLayout} label="中文说明">
-            {getFieldDecorator('chinaExplain')(
-              <Input placeholder="填写用户真实姓名" onBlur={this.handleConfirmBlur} />
+            {getFieldDecorator('chinaExplain',  {
+              rules: [
+                {
+                  required: true,
+                  message: '请输入模块中文说明',
+                },
+              ],
+            })(
+              <TextArea placeholder="请输入模块中文说明" autosize={{ minRows: 4, maxRows: 6 }} />
             )}
           </FormItem>
+
           <FormItem {...formItemLayout} label="英文名称">
-            {getFieldDecorator('company')(<Input placeholder="公司或代理商名称" />)}
+            {getFieldDecorator('engbName',  {
+              rules: [
+                {
+                  required: true,
+                  message: '请输入模块英文名称',
+                },
+              ],
+            })(<Input placeholder="请输入模块英文名称" />)}
           </FormItem>
 
           <FormItem {...formItemLayout} label="英文说明">
-            {getFieldDecorator('mobile')(<Input placeholder="11位手机号,用于提现安全验证" />)}
+            {getFieldDecorator('engbExplain',  {
+              rules: [
+                {
+                  required: true,
+                  message: '请输入模块英文说明',
+                },
+              ],
+            })(
+              <TextArea placeholder="请输入模块英文说明" autosize={{ minRows: 4, maxRows: 6 }} />
+            )}
+          </FormItem>
+
+          <FormItem {...formItemLayout} label="模块地址">
+            {getFieldDecorator('moduleAddress',  {
+              rules: [
+                {
+                  required: true,
+                  message: '请输入模块地址',
+                },
+              ],
+            })(<Input placeholder="请输入模块地址" />)}
           </FormItem>
         </Form>
       </Modal>
     );
   }
+  // 新增/编辑模块
+  renderUpdateModal() {
+    const { list } = this.props.module
 
-  // -------- 主板 ---------------
+    const data = [{
+      key: 0,
+      rightsId: 0,
+      rightsName: '无',
+      rightsNameEnglish: '无',
+      rightsSequence: ''
+      },...list]
+
+    const { visibleUpdateModule, confirmLoading } = this.state;
+
+    const { getFieldDecorator } = this.props.form;
+
+    const formItemLayout = {
+      style: {
+        width: '100%',
+        marginBottom: 24,
+      },
+      labelCol: {
+        xs: { span: 24 },
+        sm: { span: 6 },
+      },
+      wrapperCol: {
+        xs: { span: 24 },
+        sm: { span: 16 },
+      },
+    };
+
+    // 模块代码校验
+    const validateModuleCode = (rule, value, callback) => {
+
+      if (value && !(/^[0-9]{2}$/.test(value))) {
+        callback('请输入两位0~9的数字')
+      }
+      callback();
+    }
+
+    return (
+      <Modal
+        title="编辑模块"
+        visible={visibleUpdateModule}
+        onOk={this.handleUpdateOk}
+        confirmLoading={confirmLoading}
+        onCancel={this.handleUpdateCancel}
+        className={styles.addmodule}
+      >
+        <Form layout="inline" hideRequiredMark className={styles.formCol}>
+          <FormItem {...formItemLayout} label="上级模块">
+              {getFieldDecorator('parentModule')(
+                <Cascader filedNames={{ label: 'rightsName', value: 'rightsSequence', children: 'children' }} options = {data} changeOnSelect = {true}  onChange={this.parentModuleChange} placeholder="选择上级模块" />
+              )}
+          </FormItem>
+          <FormItem {...formItemLayout} label="代码">
+            {getFieldDecorator('moduleCode',  {
+              rules: [
+                {
+                  required: true,
+                  message: '请输入模块代码',
+                },
+                { validator: validateModuleCode}
+              ],
+            })(<Input  placeholder="请输入模块代码" />)}
+          </FormItem>
+
+          <FormItem {...formItemLayout} label="中文名称">
+            {getFieldDecorator('chinaName',  {
+              rules: [
+                {
+                  required: true,
+                  message: '请输入模块中文名称',
+                },
+              ],
+            })(
+              <Input  placeholder="请输入模块中文名称"  />
+            )}
+          </FormItem>
+
+          <FormItem {...formItemLayout} label="中文说明">
+            {getFieldDecorator('chinaExplain',  {
+              rules: [
+                {
+                  required: true,
+                  message: '请输入模块中文说明',
+                },
+              ],
+            })(
+              <TextArea placeholder="请输入模块中文说明" autosize={{ minRows: 4, maxRows: 6 }} />
+            )}
+          </FormItem>
+
+          <FormItem {...formItemLayout} label="英文名称">
+            {getFieldDecorator('engbName',  {
+              rules: [
+                {
+                  required: true,
+                  message: '请输入模块英文名称',
+                },
+              ],
+            })(<Input placeholder="请输入模块英文名称" />)}
+          </FormItem>
+
+          <FormItem {...formItemLayout} label="英文说明">
+            {getFieldDecorator('engbExplain',  {
+              rules: [
+                {
+                  required: true,
+                  message: '请输入模块英文说明',
+                },
+              ],
+            })(
+              <TextArea placeholder="请输入模块英文说明" autosize={{ minRows: 4, maxRows: 6 }} />
+            )}
+          </FormItem>
+
+          <FormItem {...formItemLayout} label="模块地址">
+            {getFieldDecorator('moduleAddress',  {
+              rules: [
+                {
+                  required: true,
+                  message: '请输入模块地址',
+                },
+              ],
+            })(<Input placeholder="请输入模块地址" />)}
+          </FormItem>
+        </Form>
+      </Modal>
+    );
+  }
+// ------ main Dom -------
   render() {
     return (
       <Fragment>
@@ -291,6 +646,8 @@ export default class ModuleList extends Component {
           {this.renderTableList()}
 
           {this.renderAddModal()}
+
+          {this.renderUpdateModal()}
         </Card>
       </Fragment>
     );

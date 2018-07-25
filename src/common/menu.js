@@ -47,40 +47,6 @@ const menuData = [
     ],
   },
   {
-    name: '运营中心',
-    zhCN: '运营中心',
-    enGB: 'operating',
-    icon: 'dashboard',
-    path: 'operating',
-    children: [
-      {
-        name: '操作日志',
-        enGB: 'Operation Log',
-        path: 'Operation-log',
-      },
-      {
-        name: '系统环境',
-        enGB: 'System Environment',
-        path: 'System-environment',
-      },
-      {
-        name: '新增用户',
-        enGB: 'Add Users',
-        path: 'Add-users',
-      },
-      {
-        name: '流量分析',
-        enGB: 'Flow Analysis',
-        path: 'Flow-analysis',
-      },
-      {
-        name: '登录日志',
-        enGB: 'Login Log',
-        path: 'Login-log',
-      },
-    ],
-  },
-  {
     name: '网校管理',
     zhCN: '网校管理',
     enGB: 'School Manage',
@@ -127,6 +93,8 @@ const menuData = [
       },
       {
         name: '网校设置',
+        zhCN: '网校设置',
+        enGB: 'school-setting',
         path: 'school-setting',
         children: [
           {
@@ -145,6 +113,40 @@ const menuData = [
        		  path:'filter-blacklist'
            }
         ],
+      },
+    ],
+  },
+  {
+    name: '运营中心',
+    zhCN: '运营中心',
+    enGB: 'operating',
+    icon: 'dashboard',
+    path: 'operating',
+    children: [
+      {
+        name: '操作日志',
+        enGB: 'Operation Log',
+        path: 'Operation-log',
+      },
+      {
+        name: '系统环境',
+        enGB: 'System Environment',
+        path: 'System-environment',
+      },
+      {
+        name: '新增用户',
+        enGB: 'Add Users',
+        path: 'Add-users',
+      },
+      {
+        name: '流量分析',
+        enGB: 'Flow Analysis',
+        path: 'Flow-analysis',
+      },
+      {
+        name: '登录日志',
+        enGB: 'Login Log',
+        path: 'Login-log',
       },
     ],
   },
