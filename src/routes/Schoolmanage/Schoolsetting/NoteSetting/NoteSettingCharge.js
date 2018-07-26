@@ -29,7 +29,6 @@ import { Note } from "./zhCN-enGB";
 const { TabPane } = Tabs;
 const FormItem = Form.Item;
 const { Option } = Select;
-const { RadioGroup } = Radio;
 const { RangePicker } = DatePicker; //开始结束时间
 const status = ['线上充值-支付宝','线上充值-微信','线下充值-其他','系统赠送-其他'];
 
@@ -48,10 +47,14 @@ export default class SearchList extends Component {
       visibel: false,
       formValues: {},
       isMobile:false,
+      SmsNumber: 5000,
     }
     this.Standard = this.Standard.bind(this);
     this.handleStandardTableChange = this.handleStandardTableChange.bind(this);
     this.handleSearch = this.handleSearch.bind(this);
+    this.chargeNumberChange = this.chargeNumberChange.bind(this);
+    this.onCancel = this.onCancel.bind(this);
+    this.onOk = this.onOk.bind(this);
   }
   
   componentDidMount() {
@@ -77,26 +80,35 @@ export default class SearchList extends Component {
     });
   }
 
-  OnCancel () {
+  OnCancel = () => {
     console.log('cancel');
     
     this.setState({
       visibel: false
     });
   }
-  OnOk () {
-    console.log('ok');
-    
-    this.setState({
-      visibel: false
-    });
-  }
-  handleSearchCharge = e => {
+  OnOk = e => {
     e.preventDefault();
     const { dispatch, form } = this.props;
-    form.validateFields((err,fieldsValue) => {
+    const fieldsValue = form.getFieldsValue(['otherNumber','payWay']);
+    const err = form.getFieldsError(['otherNumber','payWay']);
+    console.log(fieldsValue);
+    
       if (err) return;
-      //...
+      const values = {
+        payWay: fieldsValue.payWay,
+        SmsNumber: fieldsValue.otherNumber ? fieldsValue.otherNumber : this.state.SmsNumber
+      }
+      console.log(values);
+      
+      this.setState({
+        visibel: false
+      });
+    
+  }
+  chargeNumberChange = num => {
+    this.setState({
+      SmsNumber: num
     });
   }
 
@@ -135,6 +147,7 @@ export default class SearchList extends Component {
       payload: {},
     });
   }
+  
 
   //表单
   Standard ({ width, list, columns, pagination:{ total = 0, current = 0, pageSize = 0 }}) {
@@ -187,6 +200,7 @@ export default class SearchList extends Component {
   
   render() {
     const { global, chart, form, loading, rule: {data} } = this.props;
+    const { SmsNumber } = this.state;
     //柱状图数据
     const { salesData } = chart;
     //设置面包屑导航
@@ -341,45 +355,70 @@ export default class SearchList extends Component {
       </Form>
     );
     //充值弹窗表单
-    const chargeForm = (
-      <Form onSubmit={this.handleSearchCharge} layout="inline">
-        <Row gutter={24} style={{borderBottom: '1px solid rgba(0,0,0,0.2)'}}>
-          <Col sm={8} md={8} lg={8} xl={8} style={{textAlign: 'right'}}>
+    const chargeModalForm = (
+      <Form layout="inline" className={styles.ModalForm}>
+        <Row gutter={24} style={{marginTop: '30px'}}>
+          <Col xs={6} sm={6} md={6} lg={6} xl={6} style={{textAlign: 'right'}}>
             充值数量：
           </Col>
-          <Col sm={16} md={16} lg={16} xl={16}>
+          <Col xs={18} sm={18} md={18} lg={18} xl={18}>
             <Row>
-              <Col sm={8} md={8} lg={8} xl={8}><Button>5000条</Button></Col>
-              <Col sm={8} md={8} lg={8} xl={8}><Button>10000条</Button></Col>
-              <Col sm={8} md={8} lg={8} xl={8}><Button>100000条</Button></Col>
+              <Col sm={8} md={8} lg={8} xl={8}><Button onClick={() => this.chargeNumberChange(5000)} style={{padding:'0px 22.5px'}} className={styles.btnBac}>5000条</Button></Col>
+              <Col sm={8} md={8} lg={8} xl={8}><Button onClick={() => this.chargeNumberChange(10000)} style={{padding:'0px 18.5px'}} className={styles.btnBac}>10000条</Button></Col>
+              <Col sm={8} md={8} lg={8} xl={8}><Button onClick={() => this.chargeNumberChange(100000)} className={styles.btnBac}>100000条</Button></Col>
             </Row>
-            <Row>
-              <Col sm={12} md={12} lg={12} xl={12}>
+            <Row className={styles.otherNumber}>
+              <Col sm={14} md={14} lg={14} xl={14}>
                 <FormItem>
-                  { getFieldDecorator('otherNumber')(<Input placeholder="输入其他数量"/>)}
+                  { getFieldDecorator('otherNumber',{
+                    rules:[
+                      {
+                        min: 1,
+                        required: false
+                      }
+                    ]
+                  })(<Input placeholder="输入其他数量"/>)}
                 </FormItem>
               </Col>
             </Row>
           </Col>
         </Row>
-        <Row style={{padidng: '30px'}}>
-          <Col>
-            金额： <b>500.00</b> 元
+        <div className={styles.line}></div>
+        <Row gutter={24} className={styles.money}>
+          <Col xs={6} sm={6} md={6} lg={6} xl={6} style={{textAlign: 'right'}} >
+            金额：
+          </Col>
+          <Col xs={18} sm={18} md={18} lg={18} xl={18}>
+            <b>{SmsNumber}.00</b> 元
           </Col>
         </Row>
-        <Row>
-          <Col>
-            {/* <FormItem label="支付方式：">
-              { getFieldDecorator('payWay')(
-                <RadioGroup>
-                  <Radio value="a">item 1</Radio>
-                  <Radio value="b">item 2</Radio>
-                </RadioGroup>
+        <Row gutter={24}>
+          <Col xs={6} sm={6} md={6} lg={6} xl={6} style={{textAlign: 'right'}} >
+            支付方式：
+          </Col>
+          <Col xs={18} sm={18} md={18} lg={18} xl={18}>
+            <FormItem>
+              { getFieldDecorator('payWay',{
+                initialValue: '1'
+              })(
+                <Radio.Group className={styles.payWay}>
+                  <Row gutter={97}>
+                    <Col xs={12} sm={12} md={12} lg={12} xl={12}>
+                      <Radio value="1" style={{marginTop: '40px'}} defaultChecked>
+                        <span className={styles.zfbPay}>支付宝支付</span>
+                      </Radio>
+                    </Col>
+                    <Col xs={12} sm={12} md={12} lg={12} xl={12}>
+                      <Radio value="2" style={{marginTop: '40px'}}>
+                        <span className={styles.wxPay}>微信支付</span>
+                      </Radio>
+                    </Col>
+                  </Row>
+                </Radio.Group>
               )}
-            </FormItem> */}
+            </FormItem>
           </Col>
         </Row>
-
       </Form>
     )
     return (
@@ -397,11 +436,11 @@ export default class SearchList extends Component {
                   {/* 充值弹窗 */}
                   <Modal 
                     title={texts.chargeTitle}
-                    onCancel={this.OnCancel.bind(this)}
-                    onOk={this.OnOk.bind(this)}
+                    onCancel={this.onCancel}
+                    onOk={this.onOk}
                     visible={this.state.visibel}
                   >
-                    {chargeForm}
+                    { chargeModalForm }
                   </Modal>
                   <WaterWave height={161} title={texts.messageResidue} remain={26455} percent={56} />
                 </Card>

@@ -50,4 +50,54 @@
         height: 1px;
         border-bottom: 2px solid rgba(0,0,0,0.2);
     }
+    
+}
+
+.ModalForm{
+    .zfbPay,.wxPay{
+        position: absolute;
+        top: -40px;
+        left: -20px;
+    }
+    .btnBac{
+        background-color: #f9f9f9;
+        height: 40px;
+        margin-bottom: 5px;
+    }
+    .otherNumber{
+        margin: 15px 0 40px 0;
+    }
+    .line{
+        height: 1px;
+        width: 87%;
+        margin: 0 auto;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    .money{
+        margin: 40px 0 40px 0;
+    }
+    .payWay{
+        margin-left: 30px;
+        margin-bottom: 30px;
+    }
+    :global{
+        .ant-input{
+            height: 40px;
+        }
+        .ant-radio:hover{
+            border-color: rgba(0,0,0,0.5);
+        }
+        ::selection{
+            background: #000000;
+        }
+        .ant-radio-checked .ant-radio-inner{
+            border-color: rgba(0,0,0,0.5);
+        }
+        .ant-radio-checked:after{
+            border: 1px solid rgba(0,0,0,0.5);
+        }
+        .ant-radio-inner:after{
+            background-color: rgba(0,0,0,0.5);
+        }
+    }
 }
