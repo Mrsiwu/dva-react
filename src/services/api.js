@@ -78,6 +78,4 @@ export async function queryNotices() {
   return request('/api/notices');
 }
 
-export async function queryNetschoolList(params) {
-  return request(`/api/netschool_list?${stringify(params)}`);
-}
+

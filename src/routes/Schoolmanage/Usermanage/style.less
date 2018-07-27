@@ -24,12 +24,6 @@
   }
 }
 
-.uploadInfo{
-display: -webkit-flex; 
-  display: flex;
-  flex-direction:column;
-}
-
 .errorPopover {
   :global {
     .ant-popover-inner-content {
@@ -73,7 +67,69 @@ display: -webkit-flex;
     padding-bottom: 12.5px !important;
   }
 }
+.tableList {
+  .tableListOperator {
+    margin-bottom: 16px;
+    button {
+      margin-right: 8px;
+    }
+  }
+}
 
+.tableListForm {
+  :global {
+    .ant-form-item {
+      margin-bottom: 24px;
+      margin-right: 0;
+      display: flex;
+      > .ant-form-item-label {
+        width: auto;
+        line-height: 32px;
+        padding-right: 8px;
+      }
+      .ant-form-item-control {
+        line-height: 32px;
+      }
+    }
+    .ant-form-item-control-wrapper {
+      flex: 1;
+    }
+  }
+  .submitButtons {
+    white-space: nowrap;
+    margin-bottom: 24px;
+  }
+}
+
+.formCol {
+  :global {
+    .ant-row > div {
+      height: 56px;
+    }
+    .ant-form-item {
+      display: flex;
+    }
+    .ant-form-item-control-wrapper {
+      flex: 1;
+    }
+  }
+}
+
+.orderhidden {
+  :global {
+    .ant-list-item-meta-content {
+      width: 100%;
+    }
+  }
+}
+
+.labelvisble {
+  :global {
+    .ant-form-item-label {
+      visibility: hidden;
+    }
+  }
+}
 // custom footer for fixed footer toolbar
 .advancedForm + div {
   padding-bottom: 64px;

@@ -87,7 +87,7 @@ export const getRouterData = app => {
       component: dynamicWrapper(app, [], () => import('../routes/platform/system')),
     },
     '/platform/user-permission': {
-      component: dynamicWrapper(app, [], () => import('../routes/platform/permission')),
+      component: dynamicWrapper(app, ['permission'], () => import('../routes/platform/permission')),
     },
     '/platform/user-permission/ruler': {
       component: dynamicWrapper(app, [], () => import('../routes/platform/permission/ruler')),
@@ -96,13 +96,13 @@ export const getRouterData = app => {
       component: dynamicWrapper(app, [], () => import('../routes/platform/permission/role')),
     },
     '/platform/platform-manage': {
-      component: dynamicWrapper(app, ['netschool'], () => import('../routes/platform/manage')),
+      component: dynamicWrapper(app, ['netschool','module'], () => import('../routes/platform/manage')),
     },
     '/platform/school-list': {
-      component: dynamicWrapper(app, ['netschool'], () => import('../routes/platform/school')),
+      component: dynamicWrapper(app, ['netschool','module'], () => import('../routes/platform/school')),
     },
     '/platform/user-list': {
-      component: dynamicWrapper(app, [], () => import('../routes/platform/user')),
+      component: dynamicWrapper(app, ['userlist'], () => import('../routes/platform/user')),
     },
     '/platform/user-list/teachers': {
       component: dynamicWrapper(app, [], () => import('../routes/platform/user/teachers')),
@@ -140,6 +140,10 @@ export const getRouterData = app => {
       // name: '工作台',
       // authority: 'admin',
    },
+    //网校设置
+    '/set-school/filter-blacklist': {
+    	component: dynamicWrapper(app, [], () => import('../routes/Setschool/Blacklist')),
+    },
     //网校管理
     '/school-manage/teach-manage/class-manage': {
       component: dynamicWrapper(app, [], () => import('../routes/Schoolmanage/Teachmanage/Classmanage')),
@@ -162,10 +166,32 @@ export const getRouterData = app => {
     '/school-manage/teach-manage/data-analyse': {
       component: dynamicWrapper(app, [], () => import('../routes/Schoolmanage/Teachmanage/Dataanalyse')),
     },
+     //网校管理----》用户管理
+
+     '/school-manage/user-manage': {
+      component: dynamicWrapper(app, [], () => import('../routes/Schoolmanage/Usermanage/manage')),
+    },
+    '/school-manage/user-manage/teaher': {
+      component: dynamicWrapper(app, ['module'], () => import('../routes/Schoolmanage/Usermanage/teaher')),
+    },
+    '/school-manage/user-manage/student': {
+      component: dynamicWrapper(app, [], () => import('../routes/Schoolmanage/Usermanage/student')),
+    },
+    '/school-manage/user-manage/class': {
+      component: dynamicWrapper(app, [], () => import('../routes/Schoolmanage/Usermanage/class')),
+    },
+
+    
     //短信设置
     '/school-manage/school-setting/note-setting': {
       component: dynamicWrapper(app, ['chart','rule','form'], () =>
         import('../routes/Schoolmanage/Schoolsetting/NoteSetting/NoteSettingCharge.js')
+      ),
+    },
+	//网校推广设置
+    '/school-manage/school-setting/seo-setting': {
+      component: dynamicWrapper(app, ['school'], () =>
+        import('../routes/Schoolmanage/Schoolsetting/Seosetting.js')
       ),
     },
     //黑名单

@@ -1,241 +1,191 @@
-import React, { Component, Fragment } from 'react';
-import moment from 'moment';
+import React, { PureComponent } from 'react';
 import { connect } from 'dva';
-import { Form, Card, Select, List, Tag, Icon, Avatar, Row, Col, Button } from 'antd';
-
-import TagSelect from 'components/TagSelect';
-import StandardFormRow from 'components/StandardFormRow';
+import {
+  Form,
+  Input,
+  DatePicker,
+  Select,
+  Button,
+  Card,
+  InputNumber,
+  Radio,
+  Icon,
+  Tooltip,
+  Col,
+  Row,
+  Upload,
+  message
+} from 'antd';
+import PageHeaderLayout from "../../../layouts/PageHeaderLayout";
 import styles from './Seosetting.less';
 
-const { Option } = Select;
-const FormItem = Form.Item;
+function getBase64(img, callback) {
+  const reader = new FileReader();
+  reader.addEventListener('load', () => callback(reader.result));
+  reader.readAsDataURL(img);
+}
 
-const pageSize = 5;
-
-@Form.create()
-@connect(({ list, loading }) => ({
-  list,
-  loading: loading.models.list,
-}))
-export default class SearchList extends Component {
-  componentDidMount() {
-    this.fetchMore();
+function beforeUpload(file) {
+  const isJPG = file.type === 'image/jpeg';
+  if (!isJPG) {
+    message.error('You can only upload JPG file!');
   }
+  const isLt2M = file.size / 1024 / 1024 < 2;
+  if (!isLt2M) {
+    message.error('Image must smaller than 2MB!');
+  }
+  return isJPG && isLt2M;
+}
 
-  setOwner = () => {
-    const { form } = this.props;
-    form.setFieldsValue({
-      owner: ['wzj'],
+
+const FormItem = Form.Item;
+const { Option } = Select;
+const { RangePicker } = DatePicker;
+const { TextArea } = Input;
+
+@connect(({ loading }) => ({
+  submitting: loading.effects['form/submitRegularForm'], 
+}))
+@Form.create()
+export default class BasicForms extends PureComponent {
+  handleSubmit = e => {
+    e.preventDefault();
+    const { form, dispatch } = this.props;
+    form.validateFieldsAndScroll((err, values) => {
+      if (!err) {
+        dispatch({
+          type: 'form/submitRegularForm',
+          payload: values,
+        });
+      }
     });
   };
 
-  fetchMore = () => {
-    const { dispatch } = this.props;
-    dispatch({
-      type: 'list/appendFetch',
-      payload: {
-        count: pageSize,
-      },
-    });
+
+
+  state = {
+    loading: false,
+  };
+
+
+  handleChange = (info) => {
+    if (info.file.status === 'uploading') {
+      this.setState({ loading: true });
+      return;
+    }
+    if (info.file.status === 'done') {
+      // Get this url from response in real world.
+      getBase64(info.file.originFileObj, imageUrl => this.setState({
+        imageUrl,
+        loading: false,
+      }));
+    }
   };
 
   render() {
-    const {
-      form,
-      list: { list },
-      loading,
-    } = this.props;
-    const { getFieldDecorator } = form;
-
-    const owners = [
-      {
-        id: 'wzj',
-        name: '我自己',
-      },
-      {
-        id: 'wjh',
-        name: '吴家豪',
-      },
-      {
-        id: 'zxx',
-        name: '周星星',
-      },
-      {
-        id: 'zly',
-        name: '赵丽颖',
-      },
-      {
-        id: 'ym',
-        name: '姚明',
-      },
-    ];
-
-    const IconText = ({ type, text }) => (
-      <span>
-        <Icon type={type} style={{ marginRight: 8 }} />
-        {text}
-      </span>
-    );
-
-    const ListContent = ({ data: { content, updatedAt, avatar, owner, href } }) => (
-      <div className={styles.listContent}>
-        <div className={styles.description}>{content}</div>
-        <div className={styles.extra}>
-          <Avatar src={avatar} size="small" />
-          <a href={href}>{owner}</a> 发布在
-          <a href={href}>{href}</a>
-          <em>{moment(updatedAt).format('YYYY-MM-DD HH:mm')}</em>
-        </div>
+     const uploadButton = (
+      <div>
+        <Icon type={this.state.loading ? 'loading' : 'plus'} />
+        <div className="ant-upload-text">Upload</div>
       </div>
     );
+    const imageUrl = this.state.imageUrl;
+
+    const { submitting, form } = this.props;
+    const { getFieldDecorator, getFieldValue } = form;
 
     const formItemLayout = {
+      labelCol: {
+        xs: { span: 24 },
+        sm: { span: 7 },
+      },
       wrapperCol: {
         xs: { span: 24 },
-        sm: { span: 24 },
-        md: { span: 12 },
+        sm: { span: 12 },
+        md: { span: 10 },
       },
     };
 
-    const loadMore =
-      list.length > 0 ? (
-        <div style={{ textAlign: 'center', marginTop: 16 }}>
-          <Button onClick={this.fetchMore} style={{ paddingLeft: 48, paddingRight: 48 }}>
-            {loading ? (
-              <span>
-                <Icon type="loading" /> 加载中...
-              </span>
-            ) : (
-              '加载更多'
-            )}
-          </Button>
-        </div>
-      ) : null;
-
+    const submitFormLayout = {
+      wrapperCol: {
+        xs: { span: 24, offset: 0 },
+        sm: { span: 10, offset: 7 },
+      },
+      
+    };
+  
     return (
-      <Fragment>
+      <PageHeaderLayout
+        title="网站名称"
+        content="设置好网站名称、网站副标题及浏览器logo有助于更好的推广。"
+      >
         <Card bordered={false}>
-          <Form layout="inline">
-            <StandardFormRow title="所属类目" block style={{ paddingBottom: 11 }}>
-              <FormItem>
-                {getFieldDecorator('category')(
-                  <TagSelect onChange={this.handleFormSubmit} expandable>
-                    <TagSelect.Option value="cat1">类目一</TagSelect.Option>
-                    <TagSelect.Option value="cat2">类目二</TagSelect.Option>
-                    <TagSelect.Option value="cat3">类目三</TagSelect.Option>
-                    <TagSelect.Option value="cat4">类目四</TagSelect.Option>
-                    <TagSelect.Option value="cat5">类目五</TagSelect.Option>
-                    <TagSelect.Option value="cat6">类目六</TagSelect.Option>
-                    <TagSelect.Option value="cat7">类目七</TagSelect.Option>
-                    <TagSelect.Option value="cat8">类目八</TagSelect.Option>
-                    <TagSelect.Option value="cat9">类目九</TagSelect.Option>
-                    <TagSelect.Option value="cat10">类目十</TagSelect.Option>
-                    <TagSelect.Option value="cat11">类目十一</TagSelect.Option>
-                    <TagSelect.Option value="cat12">类目十二</TagSelect.Option>
-                  </TagSelect>
-                )}
-              </FormItem>
-            </StandardFormRow>
-            <StandardFormRow title="owner" grid>
-              <Row>
-                <Col lg={16} md={24} sm={24} xs={24}>
-                  <FormItem>
-                    {getFieldDecorator('owner', {
-                      initialValue: ['wjh', 'zxx'],
-                    })(
-                      <Select
-                        mode="multiple"
-                        style={{ maxWidth: 286, width: '100%' }}
-                        placeholder="选择 owner"
-                      >
-                        {owners.map(owner => (
-                          <Option key={owner.id} value={owner.id}>
-                            {owner.name}
-                          </Option>
-                        ))}
-                      </Select>
-                    )}
-                    <a className={styles.selfTrigger} onClick={this.setOwner}>
-                      只看自己的
-                    </a>
-                  </FormItem>
-                </Col>
-              </Row>
-            </StandardFormRow>
-            <StandardFormRow title="其它选项" grid last>
-              <Row gutter={16}>
-                <Col xl={8} lg={10} md={12} sm={24} xs={24}>
-                  <FormItem {...formItemLayout} label="活跃用户">
-                    {getFieldDecorator('user', {})(
-                      <Select
-                        onChange={this.handleFormSubmit}
-                        placeholder="不限"
-                        style={{ maxWidth: 200, width: '100%' }}
-                      >
-                        <Option value="lisa">李三</Option>
-                      </Select>
-                    )}
-                  </FormItem>
-                </Col>
-                <Col xl={8} lg={10} md={12} sm={24} xs={24}>
-                  <FormItem {...formItemLayout} label="好评度">
-                    {getFieldDecorator('rate', {})(
-                      <Select
-                        onChange={this.handleFormSubmit}
-                        placeholder="不限"
-                        style={{ maxWidth: 200, width: '100%' }}
-                      >
-                        <Option value="good">优秀</Option>
-                      </Select>
-                    )}
-                  </FormItem>
-                </Col>
-              </Row>
-            </StandardFormRow>
+          <Form onSubmit={this.handleSubmit}   layout="vertical" hideRequiredMark style={{ marginTop: 8 }}>
+                 <FormItem label="网站副标题">
+                  {getFieldDecorator('name', {
+                    rules: [{ required: true, message: '请输入网站副标题' }],
+                  })(<Input placeholder="请输入网站副标题" />)}
+                </FormItem>
+          
+            <FormItem  layout="vertical"  label="浏览器图标">
+              {getFieldDecorator('date', {
+                rules: [
+                  {
+                    required: true,
+                    message: '请选择起止日期',
+                  },
+                ],
+              })(  <div className={styles.uploadInfo}><Upload
+                      name="avatar"
+                      listType="picture-card"
+                      className="avatar-uploader"
+                      showUploadList={false}
+                      action="//jsonplaceholder.typicode.com/posts/"
+                      beforeUpload={beforeUpload}
+                      onChange={this.handleChange}
+                    >
+                      {imageUrl ? <img src={imageUrl} alt="avatar" /> : uploadButton}
+                      
+                    </Upload> <div>建议上传图片尺寸为32*32，大小不超过1M</div></div>)}
+            </FormItem>
+            <FormItem   layout="vertical"  label="备案及版权信息">
+              {getFieldDecorator('goal', {
+                rules: [
+                  {
+                    required: true,
+                    message: '请输入备案及版权信息',
+                  },
+                ],
+              })(<Input placeholder="请输入备案及版权信息" />)}
+            </FormItem>
+            <FormItem  layout="vertical" label="SEO关键词">
+              {getFieldDecorator('seoKey', {
+                rules: [
+                  {
+                    required: true,
+                    message: '请输入SEO关键词',
+                  },
+                ],
+              })(<Input placeholder="请输入SEO描述信息" />)}
+            </FormItem>
+             <FormItem  layout="vertical" label="SEO描述信息">
+              {getFieldDecorator('seoInfo', {
+                rules: [
+                  {
+                    required: true,
+                    message: '请输入SEO描述信息',
+                  },
+                ],
+              })(<Input placeholder="请输入SEO关键词" />)}
+            </FormItem>
+            <FormItem  layout="vertical" style={{ marginTop: 32 }}>
+              <Button type="primary" htmlType="submit" loading={submitting}>
+                提交
+              </Button>
+            </FormItem>
           </Form>
         </Card>
-        <Card
-          style={{ marginTop: 24 }}
-          bordered={false}
-          bodyStyle={{ padding: '8px 32px 32px 32px' }}
-        >
-          <List
-            size="large"
-            loading={list.length === 0 ? loading : false}
-            rowKey="id"
-            itemLayout="vertical"
-            loadMore={loadMore}
-            dataSource={list}
-            renderItem={item => (
-              <List.Item
-                key={item.id}
-                actions={[
-                  <IconText type="star-o" text={item.star} />,
-                  <IconText type="like-o" text={item.like} />,
-                  <IconText type="message" text={item.message} />,
-                ]}
-                extra={<div className={styles.listItemExtra} />}
-              >
-                <List.Item.Meta
-                  title={
-                    <a className={styles.listItemMetaTitle} href={item.href}>
-                      {item.title}
-                    </a>
-                  }
-                  description={
-                    <span>
-                      <Tag>Ant Design</Tag>
-                      <Tag>设计语言</Tag>
-                      <Tag>蚂蚁金服</Tag>
-                    </span>
-                  }
-                />
-                <ListContent data={item} />
-              </List.Item>
-            )}
-          />
-        </Card>
-      </Fragment>
+      </PageHeaderLayout>
     );
   }
 }

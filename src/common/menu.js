@@ -114,6 +114,12 @@ const menuData = [
            }
         ],
       },
+      {
+        name: '用户管理',
+        zhCN: '用户管理',
+        enGB: 'User Manage',
+        path: 'user-manage',
+      },
     ],
   },
   {

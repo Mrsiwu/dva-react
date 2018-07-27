@@ -45,6 +45,54 @@ export function getTimeDay(time) {
   return `${now.getFullYear()}-${month}-${day} `;
 }
 
+export function getDays(time) {
+  if (
+    new Date(parseInt(time)) == 'Invalid Date' &&
+    new Date(parseInt(time) * 1000) == 'Invalid Date'
+  )
+    return '--';
+  let now;
+  let string = '';
+  if ((time + '').length == 10) {
+    now = new Date(parseInt(time) * 1000);
+  } else if ((time + '').length == 13) {
+    now = new Date(parseInt(time));
+  } else {
+    return '--';
+  }
+  let month = parseInt(now.getMonth() + 1) < 10 ? '0' + (now.getMonth() + 1) : now.getMonth() + 1;
+  let day = parseInt(now.getDate()) < 10 ? '0' + now.getDate() : now.getDate();
+  string = `${now.getFullYear()}-${month}-${day} `;
+  let newdate = new Date();
+  if (Date.parse(newdate) - Date.parse(now) < 172800000) {
+    if (now.getDate() == newdate.getDate()) {
+      string = '今天';
+    } else if (newdate.getDate() - now.getDate() == 1) {
+      string = '昨天';
+    }
+  }
+  return string;
+}
+
+export function getTimes(time) {
+  if (
+    new Date(parseInt(time)) == 'Invalid Date' &&
+    new Date(parseInt(time) * 1000) == 'Invalid Date'
+  )
+    return '--';
+  let now;
+  if ((time + '').length == 10) {
+    now = new Date(parseInt(time) * 1000);
+  } else if ((time + '').length == 13) {
+    now = new Date(parseInt(time));
+  } else {
+    return '--';
+  }
+  let hours = parseInt(now.getHours()) < 10 ? '0' + now.getHours() : now.getHours();
+  let minute = parseInt(now.getMinutes()) < 10 ? '0' + now.getMinutes() : now.getMinutes();
+  return `${hours}:${minute}`;
+}
+
 export function getTimeDistance(type) {
   const now = new Date();
   const oneDay = 1000 * 60 * 60 * 24;

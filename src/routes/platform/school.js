@@ -25,7 +25,9 @@ import {
   InputNumber,
   Slider,
   Table,
+  notification
 } from 'antd';
+import debounce from 'lodash/debounce';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
 import { enquireScreen, unenquireScreen } from 'enquire-js';
 import { getTimeString, getTimeDay } from '../../utils/utils';
@@ -36,6 +38,7 @@ import VList from 'react-virtualized/dist/commonjs/List';
 import InfiniteLoader from 'react-virtualized/dist/commonjs/InfiniteLoader';
 import styles from './style.less';
 const FormItem = Form.Item;
+const confirm = Modal.confirm;
 const { Meta } = Card;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -44,7 +47,7 @@ const RadioGroup = Radio.Group;
 let isMobile;
 enquireScreen(b => {
   isMobile = b;
-});
+},['only screen and (max-width: 500px)']);
 @connect(({ global, netschool, loading }) => ({
   global,
   netschool,
@@ -62,64 +65,173 @@ export default class SchoolList extends PureComponent {
     page: 1,
     pagesize: 50,
     isedit: 0,
+    editon:0,
+    setlanguagevisible:false,
+    platformlist:[],
+    schoolvals:{},
+    distributionScalenumber:0,
+    fetching: false,
+    searchplatformlist:[]
   };
   loadedRowsMap = {};
+  getplatformlistAll = (callbacks) => {
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'netschool/fetchplatformlistAll',
+      payload: {
+      },
+      callback: data => {
+        callbacks(data)
+      },
+    });
+  }
   componentDidMount() {
     this.enquireHandler = enquireScreen(mobile => {
       this.setState({
         isMobile: mobile,
       });
-    }, 'only screen and (max-width: 576.99px)');
+    },['only screen and (max-width: 500px)']);
 
     const { dispatch } = this.props;
     dispatch({
       type: 'netschool/fetchNetschoolLists',
       payload: {
-        page: 1,
+        currentPage: this.state.page,
+        pageSize: this.state.pagesize
       },
       callback: data => {
         this.setState({
-          data: data,
+          data: data.data.rows || []
         });
       },
     });
+    this.getplatformlistAll((res) => {
+      if(res.success){
+        this.setState({
+          platformlist : res.data
+        })
+      }
+      console.log(1,res)
+    });
   }
-
   componentWillUnmount() {
     unenquireScreen(this.enquireHandler);
   }
-
-  handleInfiniteOnLoad = ({ startIndex, stopIndex }) => {
-    const { netschool } = this.props;
-    let data = this.state.data;
-    for (let i = startIndex; i <= stopIndex; i++) {
-      // 1 means loading
-      this.loadedRowsMap[i] = 1;
-    }
-    let len =
-      parseInt(netschool.total) / 50 > this.state.page ? 50 : parseInt(netschool.total) % 50;
-    if (data.length > len) {
-      return;
-    }
-  };
-  isRowLoaded = ({ index }) => {
-    return !!this.loadedRowsMap[index];
-  };
-
+  //支付设置start--------
   showModal = (e, item) => {
-    console.log(item);
+    const {form} = this.props
+    let iszdy = 1;
+    let iswx = 1;
+    form.resetFields(['paymentinterface','paymentmethod','appid','mchid','wechartkey','secret','privatekey','publickey','ifsandbox']);
+    if(iszdy){
+      if(iswx){
+        this.setState({
+          isdefault:1,
+          paymentmethod:1
+        });
+        form.setFields({
+          paymentinterface: {
+            value: '1'
+          },
+          paymentmethod: {
+            value: '1'
+          },
+          appid: {
+            value: '123456'
+          },
+          mchid: {
+            value: '123456'
+          },
+          wechartkey: {
+            value: '123456'
+          },
+          secret: {
+            value: '123456'
+          },
+        });
+      }else{
+        this.setState({
+          isdefault:1,
+          paymentmethod:0
+        });
+        form.setFields({
+          paymentinterface: {
+            value: '1'
+          },
+          paymentmethod: {
+            value: '0'
+          },
+          appid: {
+            value: '123456'
+          },
+          privatekey: {
+            value: '123456'
+          },
+          publickey: {
+            value: '123456'
+          },
+        });
+      }
+    }else{
+      this.setState({
+        isdefault:0,
+        paymentmethod:0
+      });
+    }
     this.setState({
       paysetvisible: true,
+      schoolvals:item
     });
+    
   };
-
   handleOk = e => {
-    console.log(e);
+    e.preventDefault();
+    const {form ,dispatch} = this.props;
+    const { schoolvals} = this.state
+    let fields = ['paymentinterface','paymentmethod','appid','mchid','wechartkey','secret','privatekey','publickey','ifsandbox'];
+    if(this.state.isdefault){
+      if(this.state.paymentmethod){
+        fields = ['paymentinterface','paymentmethod','appid','mchid','wechartkey','secret','ifsandbox']
+      }else{
+        fields = ['paymentinterface','paymentmethod','appid','privatekey','publickey','ifsandbox']
+      }
+    }else{
+      fields = ['paymentinterface']
+    }
+    
+    form.validateFields(fields,(err, fieldsValue) => {  
+      if (err) return;
+
+      const {paymentinterface, paymentmethod,appid,mchid,wechartkey,secret,privatekey,publickey,ifsandbox} = fieldsValue;
+      let paymentSystem = {
+        paymentinterface:paymentinterface,
+        paymentmethod:paymentmethod,
+        appid:appid,
+        mchid:mchid,
+        wechartkey:wechartkey,
+        secret:secret,
+        privatekey:privatekey,
+        publickey:publickey,
+        ifsandbox:ifsandbox
+      }
+      const values = {
+        schoolId: schoolvals.schoolId || 1,
+        paymentSystem:paymentSystem
+      };
+      console.log(values)
+       dispatch({
+        type: 'netschool/fetchsavePaymentSystem',
+        payload: values,
+        callback: data => {
+          console.log(data)
+        },
+      });
+    });
+
     this.setState({
       paysetvisible: false,
     });
   };
-
   handleCancel = e => {
     console.log(e);
     this.setState({
@@ -136,6 +248,13 @@ export default class SchoolList extends PureComponent {
     this.setState({
       isdefault: e.target.value,
     });
+    const {form} =  this.props
+    form.resetFields(['paymentinterface','paymentmethod']);
+    form.setFields({
+      paymentmethod: {
+        value: '0'
+      },
+    }); 
     console.log(e);
   };
   renderpaysetmodal() {
@@ -145,8 +264,16 @@ export default class SchoolList extends PureComponent {
       labelCol: { span: 6 },
       wrapperCol: { span: 14 },
     };
+    let style1 = {
+      display:'block'
+    }
+
+    let style2 = {
+      display:'none'
+    }
+    
     let paymentmethodfrom = (
-      <FormItem {...formItemLayout} label="支付方式">
+      <FormItem style={isdefault == 1 ?style1:style2} {...formItemLayout} label="支付方式">
         {getFieldDecorator('paymentmethod', {
           initialValue: '0',
         })(
@@ -159,7 +286,7 @@ export default class SchoolList extends PureComponent {
     );
 
     let appidfrom = (
-      <FormItem {...formItemLayout} label="appid">
+      <FormItem style={isdefault == 1 ?style1:style2} {...formItemLayout} label="appid">
         {getFieldDecorator('appid', {
           rules: [
             {
@@ -171,7 +298,7 @@ export default class SchoolList extends PureComponent {
       </FormItem>
     );
     let mchidfrom = (
-      <FormItem {...formItemLayout} label="mchid">
+      <FormItem style={paymentmethod == 1 && isdefault == 1?style1:style2} {...formItemLayout} label="mchid">
         {getFieldDecorator('mchid', {
           rules: [
             {
@@ -183,7 +310,7 @@ export default class SchoolList extends PureComponent {
       </FormItem>
     );
     let wechartkeyfrom = (
-      <FormItem {...formItemLayout} label="wechartkey">
+      <FormItem style={paymentmethod == 1 && isdefault == 1?style1:style2} {...formItemLayout} label="wechartkey">
         {getFieldDecorator('wechartkey', {
           rules: [
             {
@@ -195,7 +322,7 @@ export default class SchoolList extends PureComponent {
       </FormItem>
     );
     let secretfrom = (
-      <FormItem {...formItemLayout} label="secret">
+      <FormItem style={paymentmethod == 1 && isdefault == 1?style1:style2} {...formItemLayout} label="secret">
         {getFieldDecorator('secret', {
           rules: [
             {
@@ -207,7 +334,7 @@ export default class SchoolList extends PureComponent {
       </FormItem>
     );
     let privatekeyfrom = (
-      <FormItem {...formItemLayout} label="商户的私钥">
+      <FormItem  style={paymentmethod == 0 && isdefault == 1?style1:style2} {...formItemLayout} label="商户的私钥">
         {getFieldDecorator('privatekey', {
           rules: [
             {
@@ -219,7 +346,7 @@ export default class SchoolList extends PureComponent {
       </FormItem>
     );
     let publickeyfrom = (
-      <FormItem {...formItemLayout} label="支付宝公钥">
+      <FormItem style={paymentmethod == 0 && isdefault == 1?style1:style2} {...formItemLayout} label="支付宝公钥">
         {getFieldDecorator('publickey', {
           rules: [
             {
@@ -231,7 +358,7 @@ export default class SchoolList extends PureComponent {
       </FormItem>
     );
     let ifsandboxfrom = (
-      <FormItem {...formItemLayout} label="是否沙箱环境" extra="仅测试勾选，需要对应账号">
+      <FormItem style={isdefault == 1?style1:style2} {...formItemLayout} label="是否沙箱环境" extra="仅测试勾选，需要对应账号">
         {getFieldDecorator('ifsandbox', {
           valuePropName: 'checked',
           initialValue: true,
@@ -256,36 +383,35 @@ export default class SchoolList extends PureComponent {
               </RadioGroup>
             )}
           </FormItem>
-          {isdefault == 1 ? paymentmethodfrom : ''}
-          {paymentmethod == 0 && isdefault == 1 ? appidfrom : ''}
-          {paymentmethod == 0 && isdefault == 1 ? privatekeyfrom : ''}
-          {paymentmethod == 0 && isdefault == 1 ? publickeyfrom : ''}
-          {paymentmethod == 0 && isdefault == 1 ? ifsandboxfrom : ''}
+          {paymentmethodfrom}
+          {appidfrom}
+          {privatekeyfrom}
+          {publickeyfrom}
+          {mchidfrom}
+          {wechartkeyfrom}
+          {secretfrom}
+          {ifsandboxfrom}
 
-          {paymentmethod == 1 && isdefault == 1 ? appidfrom : ''}
-          {paymentmethod == 1 && isdefault == 1 ? mchidfrom : ''}
-          {paymentmethod == 1 && isdefault == 1 ? wechartkeyfrom : ''}
-          {paymentmethod == 1 && isdefault == 1 ? secretfrom : ''}
-          {paymentmethod == 1 && isdefault == 1 ? ifsandboxfrom : ''}
+          
         </Form>
       </Modal>
     );
   }
+  //支付设置end---------------------
 
+  //模块设置start-----------------
   showmoduleset = (e, item) => {
     console.log(item);
     this.setState({
       modulevisible: true,
     });
   };
-
   handleOkmoduleset = e => {
     console.log(e);
     this.setState({
       modulevisible: false,
     });
   };
-
   handleCancelmoduleset = e => {
     console.log(e);
     this.setState({
@@ -416,8 +542,39 @@ export default class SchoolList extends PureComponent {
       </Modal>
     );
   }
+  //模块设置end------------------------
+
+  //网校新增编辑start----------------
+  addschool  = e => {
+    e.preventDefault();
+    const { dispatch, form } = this.props;
+
+    form.validateFields(['platformId','schoolName','schoolRealmName','logoURL','userId','personNumLimit','gmtExpire','versionType','netschoollanguage','distributionScale','freezingDay'],(err, fieldsValue) => {
+      if (err) return;
+      const { platformId,schoolName, schoolRealmName, logoURL,userId,personNumLimit,gmtExpire,versionType,netschoollanguage,distributionScale,freezingDay} = fieldsValue;
+    
+      const values = {
+        
+      };
+      /* dispatch({
+        type: 'netschool/fetchNetschoolLists',
+        payload: values,
+        callback: data => {
+          console.log(data)
+          this.setState({
+            data: [],
+          });
+          this.setState({
+            data: data.data.rows,
+          });
+        },
+      }); */
+    });
+  };
   rendereditschool() {
-    const { getFieldDecorator } = this.props.form;
+    const {form} = this.props
+    const { getFieldDecorator } = form;
+    let that = this
     const formItemLayout = {
       labelCol: { span: 8 },
       wrapperCol: { span: 8 },
@@ -425,10 +582,31 @@ export default class SchoolList extends PureComponent {
     function formatter(value) {
       return `${value}%`;
     }
+    function distributionScaleChange (value) {
+      form.setFields({
+        distributionScale: {
+          value: value
+        },
+      });
+      that.setState({
+        distributionScalenumber:value
+      })
+    }
+    let showhide
+    if(this.state.isedit){
+      showhide = {
+        display:'block'
+      }
+    }else{
+      showhide = {
+        display:'none'
+      }
+    }
+    
     return (
-      <Form>
+      <Form onSubmit={this.addschool} style={showhide} >
         <FormItem {...formItemLayout} label="所属平台">
-          {getFieldDecorator('platform', {
+          {getFieldDecorator('platformId', {
             initialValue: '0',
           })(
             <Select placeholder="搜索选择">
@@ -438,13 +616,13 @@ export default class SchoolList extends PureComponent {
           )}
         </FormItem>
         <FormItem {...formItemLayout} label="网校名称">
-          {getFieldDecorator('schoolname')(<Input placeholder="请输入网校名称" />)}
+          {getFieldDecorator('schoolName')(<Input placeholder="请输入网校名称" />)}
         </FormItem>
         <FormItem {...formItemLayout} label="网校域名">
-          {getFieldDecorator('schoolloaction')(<Input placeholder="请输入域名" />)}
+          {getFieldDecorator('schoolRealmName')(<Input placeholder="请输入域名" />)}
         </FormItem>
         <FormItem {...formItemLayout} label="logo">
-          {getFieldDecorator('logo')(
+          {getFieldDecorator('logoURL')(
             <Upload name="avatar" listType="picture-card" action="/upload.do">
               <div>
                 <Icon type="plus" />
@@ -462,46 +640,56 @@ export default class SchoolList extends PureComponent {
                 <a>新建</a>
               </div>
             </Col>
-            <Col span={12}>{getFieldDecorator('admin')(<Input type="hidden" />)}</Col>
+            <Col span={12}>{getFieldDecorator('userId')(<Input type="hidden" />)}</Col>
           </Row>
         </FormItem>
         <FormItem {...formItemLayout} label="用户上限">
-          {getFieldDecorator('usernumber', {
+          {getFieldDecorator('personNumLimit', {
             initialValue: 0,
           })(<InputNumber min={0} precision={0.1} />)}
         </FormItem>
         <FormItem {...formItemLayout} label="有效期">
-          {getFieldDecorator('validtime')(<DatePicker />)}
+          {getFieldDecorator('gmtExpire')(<DatePicker />)}
         </FormItem>
         <FormItem {...formItemLayout} label="网校类型">
-          {getFieldDecorator('netschooltype', {
+          {getFieldDecorator('versionType', {
             initialValue: '0',
           })(
-            <Select>
-              <Option value="0">学校</Option>
-              <Option value="1">企业</Option>
-            </Select>
+            <RadioGroup>
+              <RadioButton value="0">学校</RadioButton>
+              <RadioButton value="1">企业</RadioButton>
+            </RadioGroup>
+          )}
+        </FormItem>
+        <FormItem {...formItemLayout} label="默认语言">
+          {getFieldDecorator('netschoollanguage', {
+            initialValue: '0',
+          })(
+            <RadioGroup>
+              <RadioButton value="0">中文</RadioButton>
+              <RadioButton value="1">English</RadioButton>
+            </RadioGroup>
           )}
         </FormItem>
         <FormItem {...formItemLayout} label="网校分成">
           <Row gutter={8}>
             <Col span={16}>
-              {getFieldDecorator('netschooldivideinto', {
-                initialValue: 70,
-              })(<Slider tipFormatter={formatter} min={0} max={100} />)}
+              {getFieldDecorator('distributionScale')(
+                <Slider onChange={distributionScaleChange} tipFormatter={formatter} min={0} max={100} />
+              )}
             </Col>
             <Col span={8}>
-              <InputNumber min={0} max={100} precision={0.1} /> %
+              <InputNumber value={this.state.distributionScalenumber}   onChange={distributionScaleChange} min={0} max={100} precision={0.1} /> %
             </Col>
           </Row>
         </FormItem>
         <FormItem {...formItemLayout} label="冻结金额时间">
-          {getFieldDecorator('frozentime')(<InputNumber min={0} />)}
+          {getFieldDecorator('freezingDay')(<InputNumber min={0} precision={0.1} />)}
           <span className="ant-form-text"> 天</span>
         </FormItem>
         <Row>
           <Col span={24} style={{ textAlign: 'center' }}>
-            <Button style={{ marginRight: 38 }}>取消</Button>
+            <Button onClick={e => this.setState({isedit :0}) }  style={{ marginRight: 38 }}>取消</Button>
             <Button type="primary" htmlType="submit">
               确定
             </Button>
@@ -510,7 +698,194 @@ export default class SchoolList extends PureComponent {
       </Form>
     );
   }
+  handleopensaveSchool= (e,item) => {
+    e.preventDefault();
+    const { form ,dispatch} = this.props;
+    form.resetFields(['platformId', 'schoolName', 'schoolRealmName','logoURL','userId','personNumLimit','gmtExpire','versionType','netschoollanguage','distributionScale','freezingDay']);
+    console.log(item)
+    if(item){
+      dispatch({
+        type: 'netschool/fetchfindBySchoolId',
+        payload: {
+          schoolId:item.platformId
+        },
+        callback: datas => {
+          console.log(datas)
+          form.setFields({
+            platformId: {
+              value: 0
+            },
+            schoolName: {
+              value: '啦啦啦'
+            },
+            schoolRealmName: {
+              value: 'ss.ebh.net'
+            },
+          });
+        },
+      });
+      
+    }
+    this.setState({
+      isedit: 1
+    }) 
+  };
+  //网校新增编辑end----------------
 
+  //默认语言start------------------
+  showaddeditplatformModal = (e,item) => {
+    e.preventDefault();
+    const {form} = this.props;
+    form.resetFields(['defultlanguage']);
+    if(item){
+      form.setFields({
+        defultlanguage: {
+          value: '1'
+        },
+      }); 
+    }
+    this.setState({
+      setlanguagevisible: true,
+    });
+  };
+  handlesetlanguageformOk = (e) => {
+    e.preventDefault();
+    const {schoolvals} = this.state;
+    const { dispatch, form } = this.props;
+    form.validateFields(['defultlanguage'],(err, fieldsValue) => {  
+      if (err) return;
+      const {defultlanguage } = fieldsValue;
+      const values = {
+        languageVersion: defultlanguage,
+        schoolId: schoolvals.schoolId || 1,
+      };
+      dispatch({
+        type: 'netschool/fetchupdateLanguageVersion',
+        payload: values,
+        callback: data => {
+          if(data.success){
+            notification['success']({
+              message: '提示',
+              description: '更改网校语言成功',
+            });
+          }else{
+            notification['warning']({
+              message: '提示',
+              description: '更改网校语言失败',
+            });
+          }
+        },
+      });
+    });
+    
+    this.setState({
+      setlanguagevisible: false,
+    });
+  };
+  handlesetlanguageformCancel = e => {
+    this.setState({
+      setlanguagevisible: false,
+    });
+  };
+  rendersetlanguage() {
+    const { getFieldDecorator } = this.props.form;
+    return (
+      <Modal
+      title="默认语言"
+      visible={this.state.setlanguagevisible}
+      onOk={this.handlesetlanguageformOk}
+      onCancel={this.handlesetlanguageformCancel}
+      >
+        <Form layout="inline">
+          <FormItem label="默认语言">
+              {getFieldDecorator('defultlanguage', {
+                initialValue: '0',
+              })(
+                <RadioGroup onChange={this.paymentinterfaceChange}>
+                  <Radio value="0">中文</Radio>
+                  <Radio value="1">English</Radio>
+                </RadioGroup>
+              )}
+            </FormItem>
+        </Form>
+      </Modal>
+    );
+  }
+  //默认语言end------------------
+
+  //网校锁定删除start------------------
+  handlenetschoolstate = (e,type,item) => {
+
+    e.preventDefault();
+    const { dispatch, form } = this.props;
+    let that = this;
+    let content;
+    let states;
+    let descriptionsuccess;
+    let descriptionwarning;
+
+    if(type){
+      content = '确定删除此网校？'
+      states = 2
+      descriptionsuccess = '该网校删除成功'
+      descriptionwarning = '该网校删除失败'
+    }else{
+      content = item.state=='1'?'确定解锁此网校？':'确定锁定此网校？'
+      states = 3
+      descriptionsuccess = item.state == '1'?'该网校解锁成功':'该网校锁定成功'
+      descriptionwarning = item.state == '1'?'该网校解锁失败':'该网校锁定失败'
+    }
+    confirm({
+      title: '确认框',
+      cancelText:'取消',
+      okText:'确定',
+      content: content,
+      onOk() {
+        dispatch({
+          type: 'netschool/fetchupdateSchoolState',
+          payload: {
+            schoolId: item.schoolId || 1,
+            state:states
+          },
+          callback: data => {
+            if(data.success){
+              notification['success']({
+                message: '提示',
+                description: descriptionsuccess,
+              });
+            }else{
+              notification['warning']({
+                message: '提示',
+                description: descriptionwarning,
+              });
+            }
+          },
+        });
+      },
+      onCancel() {
+        console.log('Cancel');
+      },
+    });
+  };
+  //网校锁定删除end------------------
+
+  //网校列表start-----------------
+  handleInfiniteOnLoad = ({ startIndex, stopIndex }) => {
+    const { netschool } = this.props;
+    let data = this.state.data;
+    for (let i = startIndex; i <= stopIndex; i++) {
+      // 1 means loading
+      this.loadedRowsMap[i] = 1;
+    }
+    let len =
+      parseInt(netschool.total) / 50 > this.state.page ? 50 : parseInt(netschool.total) % 50;
+    if (data.length > len) {
+      return;
+    }
+  };
+  isRowLoaded = ({ index }) => {
+    return !!this.loadedRowsMap[index];
+  };
   renderItem = ({ index, key, style }) => {
     const { data } = this.state;
     const item = data[index];
@@ -526,11 +901,11 @@ export default class SchoolList extends PureComponent {
         <br />
         <a onClick={e => this.showmoduleset(e, item)}>模块设置</a>
         <br />
-        <a>默认语言</a>
+        <a onClick={e => this.showaddeditplatformModal(e, item)}>默认语言</a>
         <br />
-        <a>删除</a>
+        <a onClick={e => this.handlenetschoolstate(e,1, item)}>删除</a>
         <br />
-        <a>锁定</a>
+        <a onClick={e => this.handlenetschoolstate(e,0,item)}>锁定</a>
       </div>
     );
     return (
@@ -545,14 +920,14 @@ export default class SchoolList extends PureComponent {
                 />
               }
               title={
-                <span title={item.crname}>
-                  <Ellipsis lines={1}>{item.crname}</Ellipsis>
+                <span title={item.schoolName}>
+                  <Ellipsis lines={1}>{item.schoolName}</Ellipsis>
                 </span>
               }
               description={
-                <span title={item.domain + '  | 独立域名：' + item.fulldomain || '无'}>
+                <span title={item.firstDomainName + '  | 独立域名：' + item.secondDomainName || '无'}>
                   <Ellipsis lines={1}>
-                    {item.domain} | 独立域名：{item.fulldomain || '无'}
+                    {item.firstDomainName} | 独立域名：{item.secondDomainName || '无'}
                   </Ellipsis>
                 </span>
               }
@@ -571,7 +946,7 @@ export default class SchoolList extends PureComponent {
                       width: '100%',
                     }}
                   >
-                    {item.realname}
+                    {item.platformId}
                   </p>
                 </div>
               }
@@ -590,10 +965,9 @@ export default class SchoolList extends PureComponent {
                       width: '100%',
                     }}
                   >
-                    {item.realname}（{item.username}）
+                    {item.realName}（{item.loginName}）
                   </p>
                   <p
-                    title={item.ordernumber}
                     style={{
                       margin: 0,
                       whiteSpace: 'nowrap',
@@ -602,32 +976,32 @@ export default class SchoolList extends PureComponent {
                       width: '100%',
                     }}
                   >
-                    {item.mobile} ({item.location})
+                    {item.mobilPhone} ({item.mobilPhoneAddress})
                   </p>
                 </div>
               }
             />
           </Col>
           <Col xl={1} lg={1} md={1} sm={1} xs={1} style={{ paddingRight: 0 }}>
-            <List.Item.Meta description={item.stunum} />
+            <List.Item.Meta description={item.studentCount} />
           </Col>
           <Col xl={1} lg={1} md={1} sm={1} xs={1} style={{ paddingRight: 0 }}>
-            <List.Item.Meta description={item.teanum} />
+            <List.Item.Meta description={item.teacherCount} />
           </Col>
           <Col xl={1} lg={1} md={1} sm={1} xs={1} style={{ paddingRight: 0 }}>
-            <List.Item.Meta description={item.coursenum} />
+            <List.Item.Meta description={item.coursewareCount} />
           </Col>
           <Col xl={1} lg={1} md={1} sm={1} xs={1} style={{ paddingRight: 0 }}>
-            <List.Item.Meta description={item.examcount} />
+            <List.Item.Meta description={item.taskCount} />
           </Col>
           <Col xl={1} lg={1} md={1} sm={1} xs={1} style={{ paddingRight: 0 }}>
-            <List.Item.Meta description={item.asknum} />
+            <List.Item.Meta description={item.answeringQuestionCount} />
           </Col>
           <Col xl={1} lg={1} md={1} sm={1} xs={1} style={{ paddingRight: 0 }}>
-            <List.Item.Meta description={item.logincount} />
+            <List.Item.Meta description={item.loginCount} />
           </Col>
           <Col xl={2} lg={2} md={2} sm={2} xs={2}>
-            <List.Item.Meta description={getTimeString(item.lastlogintime)} />
+            <List.Item.Meta description={getTimeString(item.gmtLastLogin)} />
           </Col>
           <Col className={styles.orderhidden} xl={2} lg={2} md={2} sm={2} xs={2}>
             <List.Item.Meta
@@ -642,7 +1016,7 @@ export default class SchoolList extends PureComponent {
                       width: '100%',
                     }}
                   >
-                    {getTimeDay(item.begindate)}
+                    {getTimeDay(item.gmtCreate)}
                   </p>
                   <p
                     title={item.ordernumber}
@@ -654,7 +1028,7 @@ export default class SchoolList extends PureComponent {
                       width: '100%',
                     }}
                   >
-                    {getTimeDay(item.enddate)}
+                    {getTimeDay(item.gmtExpire)}
                   </p>
                 </div>
               }
@@ -664,7 +1038,7 @@ export default class SchoolList extends PureComponent {
             <List.Item.Meta
               description={
                 <div>
-                  <Badge status="processing" text="正常" />
+                  {'1' == '1'?<Badge status="processing" text="正常" />:<Badge status="error" text="锁定" />}
                 </div>
               }
             />
@@ -673,7 +1047,7 @@ export default class SchoolList extends PureComponent {
             <List.Item.Meta
               description={
                 <div>
-                  <a onClick={e => this.handleOpenSchool(e, item)}>编辑</a>
+                  <a onClick={e => this.handleopensaveSchool(e,item)}>编辑</a>
                   <Divider type="vertical" />
                   <Popover placement="bottom" content={content} trigger="hover">
                     <a>
@@ -688,7 +1062,6 @@ export default class SchoolList extends PureComponent {
       </List.Item>
     );
   };
-
   renderItems = ({ index, key, style }) => {
     const { data } = this.state;
     const item = data[index];
@@ -696,11 +1069,6 @@ export default class SchoolList extends PureComponent {
       <List.Item
         key={key}
         style={style}
-        actions={[
-          <a onClick={e => this.handleOpenSchool(e, item)}>学校后台</a>,
-          <a onClick={e => this.handleOpenModelTeacher(e, item)}>教师后台</a>,
-          <a onClick={e => this.handleOpenModelStudent(e, item)}>学生后台</a>,
-        ]}
       >
         <Row gutter={12} style={{ width: '100%' }}>
           <Col xl={6} lg={12} md={12} sm={24} xs={24}>
@@ -712,14 +1080,14 @@ export default class SchoolList extends PureComponent {
                 />
               }
               title={
-                <span title={item.crname}>
-                  <Ellipsis lines={1}>{item.crname}</Ellipsis>
+                <span title={item.schoolName}>
+                  <Ellipsis lines={1}>{item.schoolName}</Ellipsis>
                 </span>
               }
               description={
-                <span title={item.domain + '  | 独立域名：' + item.fulldomain || '无'}>
+                <span title={item.firstDomainName + '  | 独立域名：' + item.secondDomainName || '无'}>
                   <Ellipsis lines={1}>
-                    {item.domain} | 独立域名：{item.fulldomain || '无'}
+                    {item.firstDomainName} | 独立域名：{item.secondDomainName || '无'}
                   </Ellipsis>
                 </span>
               }
@@ -738,7 +1106,7 @@ export default class SchoolList extends PureComponent {
                       width: '100%',
                     }}
                   >
-                    {item.realname}
+                   {item.platformId}
                   </p>
                 </div>
               }
@@ -749,41 +1117,41 @@ export default class SchoolList extends PureComponent {
               title="管理员信息"
               description={
                 <div>
-                  {item.realname}（{item.username}）<br />
-                  {item.mobile} ({item.location})
+                  {item.realName}（{item.loginName}）<br />
+                  {item.mobilPhone} ({item.mobilPhoneAddress})
                 </div>
               }
             />
           </Col>
           <Col xl={1} lg={4} md={4} sm={4} xs={4} style={{ paddingRight: 0 }}>
-            <List.Item.Meta title="学生" description={item.stunum} />
+            <List.Item.Meta title="学生" description={item.studentCount} />
           </Col>
           <Col xl={1} lg={4} md={4} sm={4} xs={4} style={{ paddingRight: 0 }}>
-            <List.Item.Meta title="教师" description={item.teanum} />
+            <List.Item.Meta title="教师" description={item.teacherCount} />
           </Col>
           <Col xl={1} lg={4} md={4} sm={4} xs={4} style={{ paddingRight: 0 }}>
-            <List.Item.Meta title="课件" description={item.coursenum} />
+            <List.Item.Meta title="课件" description={item.coursewareCount} />
           </Col>
           <Col xl={1} lg={4} md={4} sm={4} xs={4} style={{ paddingRight: 0 }}>
-            <List.Item.Meta title="作业" description={item.examcount} />
+            <List.Item.Meta title="作业" description={item.taskCount} />
           </Col>
           <Col xl={1} lg={4} md={4} sm={4} xs={4} style={{ paddingRight: 0 }}>
-            <List.Item.Meta title="答疑" description={item.asknum} />
+            <List.Item.Meta title="答疑" description={item.answeringQuestionCount} />
           </Col>
           <Col xl={1} lg={4} md={4} sm={4} xs={4} style={{ paddingRight: 0 }}>
-            <List.Item.Meta title="登录" description={item.logincount} />
+            <List.Item.Meta title="登录" description={item.loginCount} />
           </Col>
           <Col xl={3} lg={12} md={12} sm={12} xs={12}>
-            <List.Item.Meta title="最后登录" description={getTimeString(item.lastlogintime)} />
+            <List.Item.Meta title="最后登录" description={getTimeString(item.gmtLastLogin)} />
           </Col>
           <Col xl={4} lg={12} md={12} sm={12} xs={12}>
             <List.Item.Meta
               title="有效期"
               description={
                 <div>
-                  {getTimeDay(item.begindate)}
+                  {getTimeDay(item.gmtCreate)}
                   <br />
-                  {getTimeDay(item.enddate)}
+                  {getTimeDay(item.gmtExpire)}
                 </div>
               }
             />
@@ -792,23 +1160,44 @@ export default class SchoolList extends PureComponent {
             <List.Item.Meta
               description={
                 <div>
-                  <Badge status="processing" text="正常" />
+                  {'1' != '1'?<Badge status="processing" text="正常" />:<Badge status="error" text="锁定" />}
                 </div>
               }
             />
+          </Col>
+          <Col xl={24} lg={24} md={24} sm={24} xs={24}>
+            <List.Item.Meta 
+              description={
+                <div>
+                  <a>进入网校后台</a>
+                  <Divider type="vertical" />
+                  <a>进入教师后台</a>
+                  <Divider type="vertical" />
+                  <a>进入学生后台</a>
+                  <Divider type="vertical" />
+                  <a onClick={e => this.showModal(e, item)}>支付设置</a>
+                  <Divider type="vertical" />
+                  <a onClick={e => this.showmoduleset(e, item)}>模块设置</a>
+                  <Divider type="vertical" />
+                  <a onClick={e => this.showaddeditplatformModal(e, item)}>默认语言</a>
+                  <Divider type="vertical" />
+                  <a onClick={e => this.handlenetschoolstate(e,1, item)}>删除</a>
+                  <Divider type="vertical" />
+                  <a onClick={e => this.handlenetschoolstate(e,0, item)}>锁定</a>
+                </div>
+              } />
           </Col>
         </Row>
       </List.Item>
     );
   };
-
   handleSearch = e => {
     e.preventDefault();
     const { dispatch, form } = this.props;
 
-    form.validateFields((err, fieldsValue) => {
+    form.validateFields(['times','status1','status','keywords'],(err, fieldsValue) => {
       if (err) return;
-      const { times, status, keywords } = fieldsValue;
+      const { times,status1, status, keywords } = fieldsValue;
       let startTime = '';
       let endTime = '';
       if (times && times != 'undefined' && times.length > 0) {
@@ -817,11 +1206,13 @@ export default class SchoolList extends PureComponent {
       }
 
       const values = {
-        page: 1,
-        startdate: startTime,
-        enddate: endTime,
-        status: status,
-        q: keywords,
+        currentPage: 1,
+        pageSize:this.state.pagesize,
+        gmtCreate: startTime,
+        gmtEnd: endTime,
+        platformId:status1,
+        state: status,
+        keywords: keywords,
       };
 
       this.setState({
@@ -832,17 +1223,17 @@ export default class SchoolList extends PureComponent {
         type: 'netschool/fetchNetschoolLists',
         payload: values,
         callback: data => {
+          console.log(data)
           this.setState({
             data: [],
           });
           this.setState({
-            data: data,
+            data: data.data.rows,
           });
         },
       });
     });
   };
-
   handleFormReset = () => {
     const { form, dispatch } = this.props;
     form.resetFields();
@@ -861,30 +1252,32 @@ export default class SchoolList extends PureComponent {
           data: [],
         });
         this.setState({
-          data: data,
+          data: data.data.rows,
         });
       },
     });
   };
-
   handleSchoolPage = (page, pagesize) => {
     const { dispatch, form } = this.props;
 
-    form.validateFields((err, fieldsValue) => {
+    form.validateFields(['times','status1','status','keywords'],(err, fieldsValue) => {
       if (err) return;
-      const { times, status, keywords } = fieldsValue;
+      const { times,status1, status, keywords } = fieldsValue;
       let startTime = '';
       let endTime = '';
       if (times && times != 'undefined' && times.length > 0) {
         startTime = Date.parse(times[0]._d) / 1000;
         endTime = Date.parse(times[1]._d) / 1000;
       }
+
       const values = {
-        page: page,
-        startdate: startTime,
-        enddate: endTime,
-        status: status,
-        q: keywords,
+        currentPage: page,
+        pageSize:this.state.pagesize,
+        gmtCreate: startTime,
+        gmtEnd: endTime,
+        platformId:status1,
+        state: status,
+        keywords: keywords,
       };
 
       this.setState({
@@ -899,15 +1292,58 @@ export default class SchoolList extends PureComponent {
             data: [],
           });
           this.setState({
-            data: data,
+            data: data.data.rows,
           });
         },
       });
     });
   };
+  handleFetchSchool = val => {
+    const { dispatch } = this.props;
+    if (val == '') return;
+    dispatch({
+      type: 'netschool/fetchsearchplatformlist',
+      payload: {
+        page: 1,
+        q: val,
+      },
+      callback: (data) => {
+        console.log(data)
+        this.setState({
+          fetching: false,
+        });
+      },
+    });
 
+    this.setState({
+      fetching: true,
+    });
+  };
+  handleChangeSchool = pla => {
+    console.log(schoolValue);
+    if (schoolValue == '' || schoolValue == 'undefined' || schoolValue == undefined) return;
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'netschool/fetchsearchplatformlist',
+      payload: {
+        crid: schoolValue.key,
+      },
+      callback: (data) => {
+        console.log(data)
+        this.setState({
+          fetching: false,
+        });
+      },
+    });
+  };
+  constructor(props) {
+    // 控制搜索频率
+    super(props);
+    this.handleFetchSchool = debounce(this.handleFetchSchool, 300);
+  }
   renderAdvancedForm() {
     const { getFieldDecorator } = this.props.form;
+    const {fetching,searchplatformlist } = this.state
     return (
       <Form onSubmit={this.handleSearch} layout="inline" className={styles.formCol}>
         <Row gutter={24}>
@@ -927,9 +1363,22 @@ export default class SchoolList extends PureComponent {
           <Col xl={5} lg={12} md={12} sm={24} xs={24}>
             <FormItem label="选择平台">
               {getFieldDecorator('status1')(
-                <Select allowClear={true} placeholder="请选择">
-                  <Option value="1">有效</Option>
-                  <Option value="-1">过期</Option>
+                <Select
+                  placeholder="输入平台名称搜索"
+                  allowClear={true}
+                  labelInValue
+                  showSearch
+                  notFoundContent={fetching ? <Spin size="small" /> : null}
+                  filterOption={false}
+                  onSearch={this.handleFetchSchool}
+                  onChange={this.handleChangeSchool}
+                  dropdownMatchSelectWidth={false}
+                >
+                  {searchplatformlist.map(d => (
+                    <Option key={d.id}>
+                      {d.name}
+                    </Option>
+                  ))}
                 </Select>
               )}
             </FormItem>
@@ -961,7 +1410,7 @@ export default class SchoolList extends PureComponent {
           </Col>
           <Col xl={24} lg={24} md={24} sm={24} xs={24}>
             <span style={{ marginBottom: 24 }}>
-              <Button type="primary" icon="plus">
+              <Button  onClick={e => this.handleopensaveSchool(e)}  type="primary" icon="plus">
                 新建网校
               </Button>
             </span>
@@ -1064,6 +1513,7 @@ export default class SchoolList extends PureComponent {
         </List>
         <Pagination
           className={styles.pagination}
+          style={{textAlign:'right'}}
           defaultPageSize={50}
           current={this.state.page}
           total={parseInt(netschool.total)}
@@ -1072,7 +1522,7 @@ export default class SchoolList extends PureComponent {
       </div>
     );
   }
-
+  //网校列表end-----------------
   render() {
     const { global } = this.props;
     const { lang = 'zhCN', home } = global;
@@ -1115,9 +1565,11 @@ export default class SchoolList extends PureComponent {
               {isedit == 0 ? this.renderAdvancedForm() : ''}
             </div>
           </div>
-          {isedit == 0 ? this.renderSchoolList() : this.rendereditschool()}
+          {isedit == 0 ? this.renderSchoolList() : ''}
+          {this.rendereditschool()}
           {this.renderpaysetmodal()}
           {this.rendermoduleset()}
+          {this.rendersetlanguage()}
         </Card>
       </PageHeaderLayout>
     );

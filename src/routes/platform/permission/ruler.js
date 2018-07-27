@@ -19,20 +19,106 @@ import {
   Badge
 } from 'antd';
 import TableVirtualized from '../../../components/TableVirtualized';
-import { enquireScreen, unenquireScreen } from 'enquire-js';
 import styles from './permission.less';
 const { TextArea } = Input;
 const FormItem = Form.Item;
 const Option = Select.Option;
-let isMobile;
-enquireScreen(b => {
-  isMobile = b
-}, 'only screen and (max-width: 600px)');
+const data = [
+  {
+    key: 1,
+    name: 'John Brown sr.',
+    age: 60,
+    address: 'New York No. 1 Lake Park',
+    children: [
+      {
+        key: 11,
+        name: 'John Brown',
+        age: 42,
+        address: 'New York No. 2 Lake Park',
+      },
+      {
+        key: 12,
+        name: 'John Brown jr.',
+        age: 30,
+        address: 'New York No. 3 Lake Park',
+        children: [
+          {
+            key: 121,
+            name: 'Jimmy Brown',
+            age: 16,
+            address: 'New York No. 3 Lake Park',
+          },
+        ],
+      },
+      {
+        key: 13,
+        name: 'Jim Green sr.',
+        age: 72,
+        address: 'London No. 1 Lake Park',
+        children: [
+          {
+            key: 131,
+            name: 'Jim Green',
+            age: 42,
+            address: 'London No. 2 Lake Park',
+            children: [
+              {
+                key: 1311,
+                name: 'Jim Green jr.',
+                age: 25,
+                address: 'London No. 3 Lake Park',
+              },
+              {
+                key: 1312,
+                name: 'Jimmy Green sr.',
+                age: 18,
+                address: 'London No. 4 Lake Park',
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    key: 2,
+    name: 'Joe Black',
+    age: 32,
+    address: 'Sidney No. 1 Lake Park',
+  },
+];
+const versionData = [
+  {
+    key: 1,
+    name: 'John Brown sr.',
+    age: 60,
+    address: 'New York No. 1 Lake Park',
+  },
+  {
+    key: 2,
+    name: 'John Brown sr.',
+    age: 60,
+    address: 'New York No. 1 Lake Park',
+  },
+  {
+    key: 3,
+    name: 'John Brown sr.',
+    age: 60,
+    address: 'New York No. 1 Lake Park',
+  },
+  {
+    key: 4,
+    name: 'John Brown sr.',
+    age: 60,
+    address: 'New York No. 1 Lake Park',
+  },
+]
 
-@connect(({ global, rule, loading }) => ({
+@connect(({ global, permission, rule, loading }) => ({
     global,
+    permission,
     rule,
-    loading: loading.models.rule
+    loading: loading.effects['permission/fetch'] || loading.effects['permission/roleFetch']
  }))
 
 @Form.create()
@@ -40,7 +126,6 @@ enquireScreen(b => {
 
 export default class RulerList extends Component {
   state = {
-    isMobile,
     confirmDirty: false,
     visibleAddUser: false,
     visibleEditUser: false,
@@ -49,31 +134,54 @@ export default class RulerList extends Component {
   };
 
   componentDidMount() {
-    this.enquireHandler = enquireScreen(mobile => {
-      this.setState({
-        isMobile: mobile,
-      });
-    });
+    this.currentPage = 1
+
+    this.getList()
+
     const { dispatch } = this.props;
+
     dispatch({
-      type: 'rule/fetch',
-      payload: {
-        currentPage: 1,
-        pageSize: 100,
-      }
-    });
+      type: 'permission/roleFetch'
+    })
   }
 
   componentWillUnmount() {
-    unenquireScreen(this.enquireHandler);
+    const { dispatch } = this.props;
+
+    dispatch({
+      type: 'module/clear'
+    })
+  }
+
+  getList() {
+    const { dispatch, form } = this.props;
+
+    let params = {
+      roleId: form.getFieldValue('role'),
+      condition: form.getFieldValue('keywords'),
+      currentPage: this.currentPage,
+      pageSize: this.pageSize,
+      userType: '3'
+    }
+
+    dispatch({
+      type: 'permission/fetch',
+      payload: params
+    })
   }
 // ------ handle event-------
   handleQuery = () => {
 
+    this.currentPage = 1
+
+    this.getList()
   }
 
   handleReset = () => {
-
+    const { form } = this.props;
+    this.currentPage = 1
+    form.resetFields(['role', 'keywords']);
+    this.getList()
   }
 
   handleDelete = (e, item) => {
@@ -84,13 +192,13 @@ export default class RulerList extends Component {
   showModal = (e, item) => {
     const { form } = this.props;
 
-    // form.resetFields(['parentModule', 'moduleCode', 'chinaName', 'chinaExplain', 'engbName', 'engbExplain', 'moduleAddress']);
-    //
-    // form.setFields({
-    //   parentModule: {
-    //     value: '1'
-    //   }
-    // });
+    form.resetFields(['parentModule', 'moduleCode', 'chinaName', 'chinaExplain', 'engbName', 'engbExplain', 'moduleAddress']);
+
+    form.setFields({
+      parentModule: {
+        value: '1'
+      }
+    });
 
     this.setState({
       visibleAddUser: true,
@@ -218,22 +326,22 @@ export default class RulerList extends Component {
 // ------ render module Dom -------
   // 搜索栏
   renderSearchForm() {
-    const { form } = this.props;
+    const { form, permission } = this.props;
+    const { roleList } = permission
     const { getFieldDecorator } = form;
     return (
       <Form layout="inline" style={{ marginBottom: 15 }}>
-        <Row className={styles.rowForm}>
+        <Row className={styles.rowForm} gutter={10}>
           <Col xl={8} lg={10} md={12} sm={24}>
             <FormItem label="选择角色">
-              {getFieldDecorator('keywords')(
-                <Select placeholder="请选择">
-                  <Option value="0">无</Option>
-                  <Option value="1">无22无</Option>
+              {getFieldDecorator('role')(
+                <Select placeholder="请选择角色" allowClear>
+                  {roleList.map(role => <Option key={role.roleId} value={role.roleId}>{role.roleName}</Option>)}
                 </Select>
               )}
             </FormItem>
           </Col>
-          <Col xl={8} lg={10} md={12} sm={24} style={{marginLeft: 10}}>
+          <Col xl={8} lg={10} md={12} sm={24}>
             <FormItem label="关键词">
               {getFieldDecorator('keywords')(<Input placeholder="搜索模块名称、模块地址查询" className={styles.inputbox} />)}
             </FormItem>
@@ -260,12 +368,8 @@ export default class RulerList extends Component {
   }
   // 用户列表
   renderTableList() {
-    const { rule, global } = this.props;
-
-    const { collapsed } = global
-
-    const data = rule.data.list
-
+    const { rule, permission, global, loading } = this.props;
+    const data = permission.userList
     const rendermenu = (item) => {
       return (
         <Menu>
@@ -281,7 +385,6 @@ export default class RulerList extends Component {
         </Menu>
       )
     };
-
     const renderMoreBtn = (item) => {
       return (
         <Dropdown overlay={rendermenu(item)}>
@@ -291,13 +394,13 @@ export default class RulerList extends Component {
         </Dropdown>
       )
     }
-    const statusMap = ['default', 'processing', 'success', 'error'];
-    const status = ['关闭', '运行中', '已上线', '异常'];
+    const statusMap = ['processing', 'error', 'success'];
+    const status = ['正常', '锁定'];
     const columns = [
       {
         title: '创建时间',
-        dataIndex: 'no',
-        key: 'no',
+        dataIndex: 'gmtCreate',
+        key: 'gmtCreate',
         width:{
           xl: 6,
           lg: 6,
@@ -308,8 +411,8 @@ export default class RulerList extends Component {
       },
       {
         title: '用户',
-        dataIndex: 'owner',
-        key: 'owner',
+        dataIndex: 'loginName',
+        key: 'loginName',
         width:{
           xl: 6,
           lg: 6,
@@ -320,8 +423,8 @@ export default class RulerList extends Component {
       },
       {
         title: '角色',
-        dataIndex: 'no',
-        key: 'age',
+        dataIndex: 'roleName',
+        key: 'roleName',
         width:{
           xl: 4,
           lg: 4,
@@ -332,7 +435,7 @@ export default class RulerList extends Component {
       },
       {
         title: '状态',
-        key: 'status',
+        key: 'state',
         width:{
           xl: 4,
           lg: 4,
@@ -342,7 +445,7 @@ export default class RulerList extends Component {
         },
         render: (record) => (
           <span>
-            <Badge status={statusMap[record.status]} text={status[record.status]} />
+            <Badge status={statusMap[record.state]} text={status[record.state]} />
           </span>
         )
       },
@@ -365,10 +468,36 @@ export default class RulerList extends Component {
         ),
       },
     ];
-
+    const pagination = {
+      current: this.currentPage,
+      defaultCurrent: 1,
+      showQuickJumper: true,
+      onChange: (currentPage, pageSize) => {
+        this.currentPage = currentPage
+        this.pageSize = pageSize
+        this.getList()
+      },
+      defaultPageSize: 10,
+      showSizeChanger: true,
+      pageSizeOptions: ['10', '30', '50', '100', '200'],
+      onShowSizeChange: (current, pageSize) => {
+        this.currentPage = 1
+        this.pageSize = pageSize
+        this.getList()
+      },
+      total: data.length,
+      hideOnSinglePage: true
+    }
+    const table = {
+      columns: columns,
+      dataSource: data,
+      rowHeight: [120, 108, 108, 108, 54],
+      pagination: pagination,
+      loading: loading
+    }
     return (
-      <div >
-        <TableVirtualized columns={columns} dataSource={data} rowHeight={[190,108,108,54,54]} />
+      <div>
+        <TableVirtualized {...table} />
       </div>
     )
   }

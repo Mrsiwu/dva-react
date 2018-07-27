@@ -22,14 +22,19 @@ const { TextArea } = Input;
 const FormItem = Form.Item;
 const Option = Select.Option;
 
-@connect(({ global, module }) => ({ global, module }))
+@connect(({
+  global,
+  module,
+  loading
+}) => ({
+  global,
+  module,
+  loading: loading.effects['module/fetch'] || loading.effects['module/addFetch'] || loading.effects['module/updateFetch']  }))
 @Form.create()
 export default class ModuleList extends Component {
   state = {
     visibleModule: false,
-    visibleUpdateModule: false,
-    confirmLoading: false,
-    loading: false
+    visibleUpdateModule: false
   };
 
   componentDidMount() {
@@ -37,14 +42,15 @@ export default class ModuleList extends Component {
   }
 
   componentWillUnmount(){
+    const { dispatch } = this.props;
 
+    dispatch({
+      type: 'module/clear'
+    })
   }
 
   getList () {
     const { dispatch, form } = this.props;
-    this.setState({
-      loading: true
-    })
 
     let params = {
       rightsName: form.getFieldValue('keywords')
@@ -52,15 +58,9 @@ export default class ModuleList extends Component {
 
     dispatch({
       type: 'module/fetch',
-      payload: params,
-      callback: (res) => {
-        this.setState({
-          loading: false
-        })
-      }
-    });
+      payload: params
+    })
   }
-
 
 // ------ handle event-------
   handleQuery = () => {
@@ -169,17 +169,12 @@ export default class ModuleList extends Component {
 
   // ----- visibleModule --------
 
-
   handleOk = () => {
     const { dispatch, form } = this.props;
 
     form.validateFields(['parentModule', 'moduleCode', 'chinaName', 'chinaExplain', 'engbName', 'engbExplain', 'moduleAddress'], (err, fieldsValue) => {
 
       if (err) return;
-
-      this.setState({
-        confirmLoading: true,
-      })
 
       const { parentModule, moduleCode, chinaName, chinaExplain, engbName, engbExplain, moduleAddress} = fieldsValue
 
@@ -203,8 +198,7 @@ export default class ModuleList extends Component {
         payload: params,
         callback: (res) => {
           this.setState({
-            visibleModule: false,
-            confirmLoading: false,
+            visibleModule: false
           })
           this.getList()
         }
@@ -224,10 +218,6 @@ export default class ModuleList extends Component {
     form.validateFields(['parentModule', 'moduleCode', 'chinaName', 'chinaExplain', 'engbName', 'engbExplain', 'moduleAddress'], (err, fieldsValue) => {
 
       if (err) return;
-
-      this.setState({
-        confirmLoading: true,
-      })
 
       const { parentModule, moduleCode, chinaName, chinaExplain, engbName, engbExplain, moduleAddress} = fieldsValue
 
@@ -253,7 +243,6 @@ export default class ModuleList extends Component {
         callback: (res) => {
           this.setState({
             visibleUpdateModule: false,
-            confirmLoading: false,
           })
           this.getList()
         }
@@ -313,7 +302,9 @@ export default class ModuleList extends Component {
     //     break;
     //   default:
     // }
-    const { list: data } = this.props.module
+    const { module, loading } = this.props
+    const { list: data } = module
+
     const rendermenu = (item) => {
       return (
         <Menu>
@@ -372,11 +363,14 @@ export default class ModuleList extends Component {
       },
     ];
 
-    return <Table columns={columns} dataSource={data} pagination={false} loading={this.state.loading} />
+    return <Table columns={columns} rowKey='rightsId' dataSource={data} pagination={false} loading={loading} />
   }
   // 新增/编辑模块
   renderAddModal() {
-    const { list } = this.props.module
+
+    const { loading, module } = this.props
+
+    const { list } = module
 
     const data = [{
       key: 0,
@@ -386,7 +380,7 @@ export default class ModuleList extends Component {
       rightsSequence: ''
       },...list]
 
-    const { visibleModule, confirmLoading } = this.state;
+    const { visibleModule } = this.state;
 
     const { getFieldDecorator } = this.props.form;
 
@@ -419,7 +413,7 @@ export default class ModuleList extends Component {
         title="新增模块"
         visible={visibleModule}
         onOk={this.handleOk}
-        confirmLoading={confirmLoading}
+        confirmLoading={loading}
         onCancel={this.handleCancel}
         className={styles.addmodule}
       >
@@ -507,7 +501,8 @@ export default class ModuleList extends Component {
   }
   // 新增/编辑模块
   renderUpdateModal() {
-    const { list } = this.props.module
+    const { loading, module } = this.props
+    const { list } = module
 
     const data = [{
       key: 0,
@@ -517,7 +512,7 @@ export default class ModuleList extends Component {
       rightsSequence: ''
       },...list]
 
-    const { visibleUpdateModule, confirmLoading } = this.state;
+    const { visibleUpdateModule } = this.state;
 
     const { getFieldDecorator } = this.props.form;
 
@@ -550,7 +545,7 @@ export default class ModuleList extends Component {
         title="编辑模块"
         visible={visibleUpdateModule}
         onOk={this.handleUpdateOk}
-        confirmLoading={confirmLoading}
+        confirmLoading={loading}
         onCancel={this.handleUpdateCancel}
         className={styles.addmodule}
       >

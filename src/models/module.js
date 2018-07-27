@@ -1,13 +1,12 @@
 import { notification  } from 'antd';
-import { rightsGetList, rightsAdd, rightsUpdate, rightsDelete, getVersionList, deleteVersion } from '../services/apiz';
+import { rightsGetList, rightsAdd, rightsUpdate, rightsDelete, getVersionList, deleteVersion, addVersion, updateVersion, addRights } from '../services/apiz';
 
 export default {
   namespace: 'module',
 
   state: {
     list: [],
-    version: [],
-    loading: true
+    version: []
   },
 
   effects: {
@@ -83,6 +82,40 @@ export default {
 
       if(callback) callback(response);
     },
+    *addVersionFetch({ payload, callback }, { call, put }) {
+      const response = yield call(addVersion, payload);
+
+      if (response.success) {
+        notification['success']({
+          message: '添加版本成功',
+          description: response.message,
+        });
+      } else {
+        notification['error']({
+          message: '添加版本失败',
+          description: response.message,
+        });
+      }
+
+      if(callback) callback(response);
+    },
+    *updateVersionFetch({ payload, callback }, { call, put }) {
+      const response = yield call(updateVersion, payload);
+
+      if (response.success) {
+        notification['success']({
+          message: '修改版本成功',
+          description: response.message,
+        });
+      } else {
+        notification['error']({
+          message: '修改版本失败',
+          description: response.message,
+        });
+      }
+
+      if(callback) callback(response);
+    },
     *deleteVersionFetch({ payload, callback }, { call, put }) {
       const response = yield call(deleteVersion, payload);
 
@@ -99,6 +132,23 @@ export default {
       }
 
       if(callback) callback()
+    },
+    *addRightsFetch({ payload, callback }, { call, put }) {
+      const response = yield call(addRights, payload);
+
+      if (response.success) {
+        notification['success']({
+          message: '设置模块成功',
+          description: response.message,
+        });
+      } else {
+        notification['error']({
+          message: '设置模块失败',
+          description: response.message,
+        });
+      }
+
+      if(callback) callback(response);
     }
   },
 
@@ -118,7 +168,7 @@ export default {
     clear() {
       return {
         list: [],
-        loading: true,
+        version: []
       }
     }
   },

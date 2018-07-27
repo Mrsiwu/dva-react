@@ -31,7 +31,6 @@ const getValue = obj =>
     .map(key => obj[key])
     .join(',');
 const statusMap = ['default', 'processing', 'success', 'error'];
-
 const status = ['关闭', '运行中', '已上线', '异常'];
 
 const CreateForm = Form.create()(props => {
@@ -322,8 +321,6 @@ export default class TableList extends PureComponent {
       rule: { data },
       loading,
     } = this.props;
-    console.log(data);
-    
     const { selectedRows, modalVisible } = this.state;
 
     const columns = [

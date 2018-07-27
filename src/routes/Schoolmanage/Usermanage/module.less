@@ -5,6 +5,7 @@
   .buttonBox {
     display: inline-block;
     height: 45px;
+    margin-left: 10px;
   }
   .addmodule {
     padding-left: 8px;
@@ -37,19 +38,26 @@
     }
   }
 }
-.addmodule{
-  :global{
-    .ant-modal-body{
-      padding-top:50px;
-      padding-bottom: 0;
+
+.metapadd{
+  :global {
+    .ant-card-body{
+      padding: 0;
+    }
+    .ant-card-meta-description{
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
     }
   }
 }
-.addversion{
-  :global{
-    .ant-modal-body{
-      padding-top:40px;
-      padding-bottom: 20px;
+.uploadimport{
+  :global {
+    .ant-upload-select{
+      margin-left: 20px;
+    }
+    .ant-upload-list{
+      margin-left: 20px;
     }
   }
 }
@@ -61,12 +69,19 @@
     }
   }
 }
-.formCol{
-    :global {
-        .ant-form-item-label{
-          margin-right: 10px;
-        }
+
+.formCol {
+  :global {
+    .ant-row > div {
+      height: 56px;
     }
+    .ant-form-item {
+      display: flex;
+    }
+    .ant-form-item-control-wrapper {
+      flex: 1;
+    }
+  }
 }
 
 @media screen and (max-width: @screen-md) {

@@ -30,7 +30,7 @@ const { TabPane } = Tabs;
 const FormItem = Form.Item;
 const { Option } = Select;
 const { RangePicker } = DatePicker; //开始结束时间
-const status = ['线上充值-支付宝','线上充值-微信','线下充值-其他','系统赠送-其他'];
+
 
 @connect(({ global, chart, loading, rule}) => ({
   global,
@@ -41,20 +41,12 @@ const status = ['线上充值-支付宝','线上充值-微信','线下充值-其
 
 @Form.create()
 export default class SearchList extends Component {
-  constructor (props) {
-    super(props);
-    this.state = {
-      visibel: false,
-      formValues: {},
-      isMobile:false,
-      SmsNumber: 5000,
-    }
-    this.Standard = this.Standard.bind(this);
-    this.handleStandardTableChange = this.handleStandardTableChange.bind(this);
-    this.handleSearch = this.handleSearch.bind(this);
-    this.chargeNumberChange = this.chargeNumberChange.bind(this);
-    this.onCancel = this.onCancel.bind(this);
-    this.onOk = this.onOk.bind(this);
+  state = {
+    visibel: false,
+    formValues: {}, //搜索表单数据
+    chargeTabel: true, //charge为true显示充值Table模块,false显示消费模块
+    SmsNumber: 5000, //短信数量
+    buttonFocus: 5000 //短信默认数量
   }
   
   componentDidMount() {
@@ -73,52 +65,43 @@ export default class SearchList extends Component {
       type: 'chart/clear',
     });
   }
-  //充值弹窗
-  ModalShow () {
-    this.setState({
-      visibel: true
-    });
-  }
+  
+// ------ initialize(自定义初始化) -----------
+  //充值弹窗显示
+  modalShow = () => {
+    const { form } = this.props;
 
-  OnCancel = () => {
-    console.log('cancel');
-    
-    this.setState({
-      visibel: false
-    });
-  }
-  OnOk = e => {
-    e.preventDefault();
-    const { dispatch, form } = this.props;
-    const fieldsValue = form.getFieldsValue(['otherNumber','payWay']);
-    const err = form.getFieldsError(['otherNumber','payWay']);
-    console.log(fieldsValue);
-    
-      if (err) return;
-      const values = {
-        payWay: fieldsValue.payWay,
-        SmsNumber: fieldsValue.otherNumber ? fieldsValue.otherNumber : this.state.SmsNumber
-      }
-      console.log(values);
-      
-      this.setState({
-        visibel: false
-      });
-    
-  }
-  chargeNumberChange = num => {
-    this.setState({
-      SmsNumber: num
-    });
-  }
+    form.resetFields(['otherNumber','payWay']);
 
-  //查询跟重置
+    this.setState({
+      SmsNumber: 5000,
+      visibel: true,
+      buttonFocus: 5000
+    });
+  }
+// ------ module event(自定义方法) -----------
+  // 语言切换
+  language = () => {
+    const { global: {lang} } = this.props;
+    
+    return Note(lang); 
+  }
+  // 切换充值记录/消费记录的回调
+  selectRecord = (activeKey) => {
+    console.log(activeKey);
+    this.setState({
+      chargeTabel: false
+    });
+  }
+  //查询
   handleSearch = e => {
     e.preventDefault();
 
     const { dispatch, form } = this.props;
+    const { chargeTabel } = this.state;
+    const args = chargeTabel ? ['searchTime','status'] : ['searchTime'];
 
-    form.validateFields((err, fieldsValue) => { //fieldsValue为表单输入的值
+    form.validateFields(args,(err, fieldsValue) => { //fieldsValue为表单输入的值
       if (err) return;
       
       const values = {
@@ -135,10 +118,12 @@ export default class SearchList extends Component {
       });
     });
   };
-
+  //重置
   handleFormReset = () => {
     const { form, dispatch } = this.props;
-    form.resetFields(); //重置一组输入控件的值（为 initialValue）与状态，如不传入参数，则重置所有组件
+    const { chargeTabel } = this.state;
+    const args = chargeTabel ? ['searchTime','status'] : ['searchTime'];
+    form.resetFields(args); //重置一组输入控件的值（为 initialValue）与状态，如不传入参数，则重置所有组件
     this.setState({
       formValues: {},
     });
@@ -147,46 +132,9 @@ export default class SearchList extends Component {
       payload: {},
     });
   }
-  
-
-  //表单
-  Standard ({ width, list, columns, pagination:{ total = 0, current = 0, pageSize = 0 }}) {
-    return (
-      <div >
-        <TableVirtualized columns={columns} dataSource={list} rowHeight={width} />
-        <Pagination 
-          showSizeChanger
-          showQuickJumper
-          current={current}
-          pageSize={pageSize}
-          hideOnSinglePage={true}
-          total={total}
-          onChange = {
-            this.handleStandardTableChange
-          }
-          onShowSizeChange= {
-            this.handleStandardTableChange
-          }
-        />
-      </div>
-    )
-  }
-  //表单（分页）
-  handleStandardTableChange = (current, pageSize) => {
-    const { dispatch } = this.props;
-    const { formValues } = this.state;
-    const params = {
-      currentPage: current,
-      pageSize: pageSize,
-      ...formValues,
-    };
-    dispatch({
-      type: 'rule/fetch',
-      payload: params,
-    });
-  };
-  //表单(支付方式)
-  Payment (val) {
+  //支付方式数据处理
+  payment = (val) => {
+    const status = ['线上充值-支付宝','线上充值-微信','线下充值-其他','系统赠送-其他'];
     let resultVal;
     switch (val) {
       case 0: resultVal = status[0]; break;
@@ -197,18 +145,164 @@ export default class SearchList extends Component {
     }
     return resultVal;
   }
-  
-  render() {
-    const { global, chart, form, loading, rule: {data} } = this.props;
+  //充值短信条数选择处理
+  chargeNumberChange = num => {
+    this.setState({
+      SmsNumber: num,
+      buttonFocus: num
+    });
+  }
+  //取消短信充值
+  _onCancel = () => {
+    console.log('cancel');
+    
+    this.setState({
+      visibel: false
+    });
+  }
+  //短信充值付款处理
+  _onOk = (e) => {
+    e.preventDefault();
+
+    const { dispatch, form } = this.props;
     const { SmsNumber } = this.state;
-    //柱状图数据
-    const { salesData } = chart;
-    //设置面包屑导航
-    const { lang, home } = global;
-    //语言切换
-    const texts = Note(lang);
-    //列表(Pc端列表样式)
-    const columns = {
+
+    form.validateFields(['otherNumber','payWay'],(err, fieldsValue) => {
+      if(err) return;
+      const values = {
+        payWay: fieldsValue.payWay,
+        SmsNumber: fieldsValue.otherNumber ? fieldsValue.otherNumber : SmsNumber
+      }
+
+      console.log(values);
+      
+      this.setState({
+        visibel: false
+      });
+    })
+  }
+  //分页页数变化，请求数据
+  handleStandardTableChange = (current, pageSize) => {
+    const { dispatch } = this.props;
+    const { formValues } = this.state;
+    const params = {
+      currentPage: current,
+      pageSize: pageSize,
+      ...formValues,
+    };
+    console.log('page');
+    
+    dispatch({
+      type: 'rule/fetch',
+      payload: params,
+    });
+  };
+  //当编辑其他短信数量,取消按钮选择项焦点样式
+  chargeOther = (e) => {
+    console.log(e.target.value);
+    const val = e.target.value;
+    if(val){
+      this.setState({
+        buttonFocus: 0
+      });
+    }
+  }
+
+// ------ component module Dom （小模块模板） -------
+  // 充值短信数量选择模块
+  selectCharge = () => {
+    let { buttonFocus } = this.state;
+    
+    console.log(buttonFocus);
+    
+    let xc1 = {
+      [styles.btnBac]:true,
+      [styles.focus]: buttonFocus === 5000 ? true : false
+    }
+    let xc2 = {
+      [styles.btnBac]:true,
+      [styles.focus]: buttonFocus === 10000 ? true : false
+    }
+    let xc3 = {
+      [styles.btnBac]:true,
+      [styles.focus]: buttonFocus === 100000 ? true : false
+    }
+    return (
+      <Row>
+        <Col sm={8} md={8} lg={8} xl={8}><Button onClick={() => this.chargeNumberChange(5000)} style={{padding:'0px 22.5px'}} className={xc1}>5000条</Button></Col>
+        <Col sm={8} md={8} lg={8} xl={8}><Button onClick={() => this.chargeNumberChange(10000)} style={{padding:'0px 18.5px'}} className={xc2}>10000条</Button></Col>
+        <Col sm={8} md={8} lg={8} xl={8}><Button onClick={() => this.chargeNumberChange(100000)} className={xc3}>100000条</Button></Col>
+      </Row>
+    );
+  }
+  
+  //充值搜索模块
+  chargeForm = () => {
+    const { form } = this.props;
+    const { getFieldDecorator } = form;
+    return (
+      <Form onSubmit={this.handleSearch} layout="inline">
+        <Row gutter={24}>
+          <Col md={24} sm={24} lg={7} xl={7}>
+            <FormItem label="选择时间">
+              {getFieldDecorator('searchTime')(<RangePicker />)}
+            </FormItem>
+          </Col>
+          <Col md={24} sm={24} lg={7} xl={7}>
+            <FormItem label="支付方式">
+              {getFieldDecorator('status')(
+                <Select placeholder="请选择" style={{ width: '100%' }}>
+                  <Option value="0">支付宝</Option>
+                  <Option value="1">微信</Option>
+                </Select>
+              )}
+            </FormItem>
+          </Col>
+          <Col md={24} sm={24} lg={7} xl={7}>
+            <span className={styles.submitButtons}>
+              <Button type="primary" htmlType="submit">
+                查询
+              </Button>
+              <Button style={{ marginLeft: 8 }} onClick={this.handleFormReset}>
+                重置
+              </Button>
+            </span>
+          </Col>
+        </Row>
+      </Form>
+    );
+  }
+  //消费搜索模块
+  consumptionForm = () => {
+    const { form } = this.props;
+    const { getFieldDecorator } = form;
+    return (
+      <Form onSubmit={this.handleSearch} layout="inline">
+        <Row gutter={24}>
+          <Col md={24} sm={24} lg={7} xl={7}>
+            <FormItem label="选择时间">
+              {getFieldDecorator('searchTime')(<RangePicker />)}
+            </FormItem>
+          </Col>
+          <Col md={24} sm={24} lg={7} xl={7}>
+            <span className={styles.submitButtons}>
+              <Button type="primary" htmlType="submit">
+                查询
+              </Button>
+              <Button style={{ marginLeft: 8 }} onClick={this.handleFormReset}>
+                重置
+              </Button>
+            </span>
+          </Col>
+        </Row>
+      </Form>
+    );
+  }
+  //表单模块
+  standardList = () => {
+    const { rule: {data} } = this.props;
+    const { chargeTabel } = this.state;
+    const column = {
       chargeList: [
         {
           title: '时间',
@@ -224,7 +318,7 @@ export default class SearchList extends Component {
         },
         {
           title: '支付方式',
-          render: (val) => (<span>{this.Payment(val.status)}</span>),
+          render: (val) => (<span>{this.payment(val.status)}</span>),
           key: '3',
           width: { xl: 6, lg: 6, md: 6, sm: 6 , xs: 16}
         },
@@ -287,185 +381,176 @@ export default class SearchList extends Component {
       ]
     };
     const chargeMessage = {
-      loading: loading,
-      columns: columns.chargeList,
+      columns: column.chargeList,
       ...data,
       width: [200,76,76,76,76]
     }
     
     const consumptionMessage = {
-      loading: loading,
-      columns: columns.consumptionList,
+      columns: column.consumptionList,
       ...data,
       width: [320,120,76,76,76]
     }
-    //充值搜索
-    const { getFieldDecorator } = form;
-    const ChargeForm = (
-      <Form onSubmit={this.handleSearch} layout="inline">
-        <Row gutter={24}>
-          <Col md={24} sm={24} lg={7} xl={7}>
-            <FormItem label="选择时间">
-              {getFieldDecorator('searchTime')(<RangePicker />)}
-            </FormItem>
-          </Col>
-          <Col md={24} sm={24} lg={7} xl={7}>
-            <FormItem label="支付方式">
-              {getFieldDecorator('status')(
-                <Select placeholder="请选择" style={{ width: '100%' }}>
-                  <Option value="0">支付宝</Option>
-                  <Option value="1">微信</Option>
-                </Select>
-              )}
-            </FormItem>
-          </Col>
-          <Col md={24} sm={24} lg={7} xl={7}>
-            <span className={styles.submitButtons}>
-              <Button type="primary" htmlType="submit">
-                查询
-              </Button>
-              <Button style={{ marginLeft: 8 }} onClick={this.handleFormReset}>
-                重置
-              </Button>
-            </span>
-          </Col>
-        </Row>
-      </Form>
-    );
-    //消费搜索
-    const ConsumptionForm = (
-      <Form onSubmit={this.handleSearch} layout="inline">
-        <Row gutter={24}>
-          <Col md={24} sm={24} lg={7} xl={7}>
-            <FormItem label="选择时间">
-            {getFieldDecorator('searchTime')(<RangePicker />)}
-            </FormItem>
-          </Col>
-          <Col md={24} sm={24} lg={7} xl={7}>
-            <span className={styles.submitButtons}>
-              <Button type="primary" htmlType="submit">
-                查询
-              </Button>
-              <Button style={{ marginLeft: 8 }} onClick={this.handleFormReset}>
-                重置
-              </Button>
-            </span>
-          </Col>
-        </Row>
-      </Form>
-    );
-    //充值弹窗表单
-    const chargeModalForm = (
-      <Form layout="inline" className={styles.ModalForm}>
-        <Row gutter={24} style={{marginTop: '30px'}}>
-          <Col xs={6} sm={6} md={6} lg={6} xl={6} style={{textAlign: 'right'}}>
-            充值数量：
-          </Col>
-          <Col xs={18} sm={18} md={18} lg={18} xl={18}>
-            <Row>
-              <Col sm={8} md={8} lg={8} xl={8}><Button onClick={() => this.chargeNumberChange(5000)} style={{padding:'0px 22.5px'}} className={styles.btnBac}>5000条</Button></Col>
-              <Col sm={8} md={8} lg={8} xl={8}><Button onClick={() => this.chargeNumberChange(10000)} style={{padding:'0px 18.5px'}} className={styles.btnBac}>10000条</Button></Col>
-              <Col sm={8} md={8} lg={8} xl={8}><Button onClick={() => this.chargeNumberChange(100000)} className={styles.btnBac}>100000条</Button></Col>
-            </Row>
-            <Row className={styles.otherNumber}>
-              <Col sm={14} md={14} lg={14} xl={14}>
-                <FormItem>
-                  { getFieldDecorator('otherNumber',{
-                    rules:[
-                      {
-                        min: 1,
-                        required: false
-                      }
-                    ]
-                  })(<Input placeholder="输入其他数量"/>)}
-                </FormItem>
-              </Col>
-            </Row>
-          </Col>
-        </Row>
-        <div className={styles.line}></div>
-        <Row gutter={24} className={styles.money}>
-          <Col xs={6} sm={6} md={6} lg={6} xl={6} style={{textAlign: 'right'}} >
-            金额：
-          </Col>
-          <Col xs={18} sm={18} md={18} lg={18} xl={18}>
-            <b>{SmsNumber}.00</b> 元
-          </Col>
-        </Row>
-        <Row gutter={24}>
-          <Col xs={6} sm={6} md={6} lg={6} xl={6} style={{textAlign: 'right'}} >
-            支付方式：
-          </Col>
-          <Col xs={18} sm={18} md={18} lg={18} xl={18}>
-            <FormItem>
-              { getFieldDecorator('payWay',{
-                initialValue: '1'
-              })(
-                <Radio.Group className={styles.payWay}>
-                  <Row gutter={97}>
-                    <Col xs={12} sm={12} md={12} lg={12} xl={12}>
-                      <Radio value="1" style={{marginTop: '40px'}} defaultChecked>
-                        <span className={styles.zfbPay}>支付宝支付</span>
-                      </Radio>
-                    </Col>
-                    <Col xs={12} sm={12} md={12} lg={12} xl={12}>
-                      <Radio value="2" style={{marginTop: '40px'}}>
-                        <span className={styles.wxPay}>微信支付</span>
-                      </Radio>
-                    </Col>
-                  </Row>
-                </Radio.Group>
-              )}
-            </FormItem>
-          </Col>
-        </Row>
-      </Form>
+    const { width, list, columns, pagination:{ total = 0, current = 0, pageSize = 0 }} = chargeTabel ? chargeMessage : consumptionMessage;
+    
+    return (
+      <div >
+        <TableVirtualized columns={columns} dataSource={list} rowHeight={width} />
+        <Pagination 
+          showSizeChanger
+          showQuickJumper
+          current={current}
+          pageSize={pageSize}
+          hideOnSinglePage={true}
+          total={total}
+          className={styles.page}
+          onChange = {
+            this.handleStandardTableChange
+          }
+          // onShowSizeChange= {
+          //   this.handleStandardTableChange
+          // }
+        />
+      </div>
     )
+  }
+
+// ------ render module Dom （大模块模板） -------
+  // 充值模块
+  chargeModalForm = () => {
+    const { form } = this.props;
+    const { getFieldDecorator } = form;
+    const { visibel, SmsNumber } = this.state;
+    let texts = this.language();
+    return (
+      <Modal 
+        title={texts.chargeTitle}
+        onCancel={this._onCancel}
+        onOk={this._onOk}
+        visible={visibel}
+      >
+        <Form layout="inline" className={styles.ModalForm}>
+          <Row gutter={24} style={{marginTop: '30px'}}>
+            <Col xs={6} sm={6} md={6} lg={6} xl={6} style={{textAlign: 'right'}}>
+              充值数量：
+            </Col>
+            <Col xs={18} sm={18} md={18} lg={18} xl={18}>
+              {this.selectCharge()}
+              <Row className={styles.otherNumber}>
+                <Col sm={14} md={14} lg={14} xl={14}>
+                  <FormItem>
+                    { getFieldDecorator('otherNumber',{
+                      rules:[
+                        {
+                          min: 1,
+                          required: false
+                        }
+                      ]
+                    })(<Input onChange={this.chargeOther} placeholder="输入其他数量"/>)}
+                  </FormItem>
+                </Col>
+              </Row>
+            </Col>
+          </Row>
+          <div className={styles.line}></div>
+          <Row gutter={24} className={styles.money}>
+            <Col xs={6} sm={6} md={6} lg={6} xl={6} style={{textAlign: 'right'}} >
+              金额：
+            </Col>
+            <Col xs={18} sm={18} md={18} lg={18} xl={18}>
+              <b>{SmsNumber}.00</b> 元
+            </Col>
+          </Row>
+          <Row gutter={24}>
+            <Col xs={6} sm={6} md={6} lg={6} xl={6} style={{textAlign: 'right'}} >
+              支付方式：
+            </Col>
+            <Col xs={18} sm={18} md={18} lg={18} xl={18}>
+              <FormItem>
+                { getFieldDecorator('payWay',{
+                  initialValue: '1'
+                })(
+                  <Radio.Group className={styles.payWay}>
+                    <Row gutter={97}>
+                      <Col xs={12} sm={12} md={12} lg={12} xl={12}>
+                        <Radio value="1" style={{marginTop: '40px'}}>
+                          <span className={styles.zfbPay}>支付宝支付</span>
+                        </Radio>
+                      </Col>
+                      <Col xs={12} sm={12} md={12} lg={12} xl={12}>
+                        <Radio value="2" style={{marginTop: '40px'}}>
+                          <span className={styles.wxPay}>微信支付</span>
+                        </Radio>
+                      </Col>
+                    </Row>
+                  </Radio.Group>
+                )}
+              </FormItem>
+            </Col>
+          </Row>
+        </Form>
+      </Modal>
+    );
+  }
+  // 图标模块
+  chars = () => {
+    const { chart } = this.props;
+    const { salesData } = chart;
+    let texts = this.language();
+    return (
+      <Row gutter={16}>
+      {/* 饼状图（剩余短信） */}
+        <Col xs={24} sm={24} md={6} lg={6} xl={6}>
+          <Card
+            title={texts.remain}
+            bodyStyle={{ textAlign: 'center', fontSize: 0 }}
+            bordered={false}
+            extra={<a href="javascript:;"><Button onClick={this.modalShow} type="primary">{texts.charge}</Button></a>}
+          >
+            <WaterWave height={161} title={texts.messageResidue} remain={26455} percent={56} />
+          </Card>
+        </Col>
+        {/* 柱状图（30天消费） */}
+        <Col xs={24} sm={24} md={18} lg={18} xl={18}>
+          <div className={styles.salesBar}>
+            <Bar height={222} title={texts.recentConsumption} data={salesData} className={styles.consumeBar}/>
+          </div>
+        </Col>
+      </Row>
+    );
+  }
+  // 充值/消费记录模块
+  searchTableList = () => {
+    return (
+      <Row className={styles.noteTabs}>
+        <Col xs={24} sm={24}>
+          <Tabs type="card" className={styles.backgroundTabs} onChange={this.selectRecord}>
+            <TabPane tab="充值记录" key="1">
+              { this.chargeForm() }
+              {this.standardList()}
+            </TabPane>
+            <TabPane tab="消费记录" key="2">
+              { this.consumptionForm() }
+              {this.standardList()}
+            </TabPane>
+          </Tabs>
+        </Col>
+      </Row>
+    );
+  }
+
+// ------ main Dom -------
+  render() {
+    const { global } = this.props;
+    //设置面包屑导航
+    const { home } = global;
+    const texts = this.language();
     return (
         <PageHeaderLayout title={texts.title} content={texts.connect} home={home}>
           <div className={styles.note}>
-            <Row gutter={16}>
-            {/* 剩余短信 */}
-              <Col xs={24} sm={24} md={6} lg={6} xl={6}>
-                <Card
-                  title={texts.remain}
-                  bodyStyle={{ textAlign: 'center', fontSize: 0 }}
-                  bordered={false}
-                  extra={<a href="javascript:;"><Button onClick={this.ModalShow.bind(this)} type="primary">{texts.charge}</Button></a>}
-                >
-                  {/* 充值弹窗 */}
-                  <Modal 
-                    title={texts.chargeTitle}
-                    onCancel={this.onCancel}
-                    onOk={this.onOk}
-                    visible={this.state.visibel}
-                  >
-                    { chargeModalForm }
-                  </Modal>
-                  <WaterWave height={161} title={texts.messageResidue} remain={26455} percent={56} />
-                </Card>
-              </Col>
-              {/* 柱状图 */}
-              <Col xs={24} sm={24} md={18} lg={18} xl={18}>
-                <div className={styles.salesBar}>
-                  <Bar height={222} title={texts.recentConsumption} data={salesData} className={styles.consumeBar}/>
-                </div>
-              </Col>
-            </Row>
-            <Row className={styles.noteTabs}>
-              <Col xs={24} sm={24}>
-                <Tabs type="card" className={styles.backgroundTabs}>
-                  <TabPane tab="充值记录" key="1">
-                    { ChargeForm }
-                    {this.Standard(chargeMessage)}
-                  </TabPane>
-                  <TabPane tab="消费记录" key="2">
-                    { ConsumptionForm }
-                    {this.Standard(consumptionMessage)}
-                  </TabPane>
-                </Tabs>
-              </Col>
-            </Row>
+            { this.chargeModalForm() }
+            { this.chars() }
+            { this.searchTableList() }
           </div>
         </PageHeaderLayout>
     );

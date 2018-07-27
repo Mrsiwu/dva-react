@@ -1,5 +1,5 @@
 import React, { PureComponent } from 'react';
-import { Menu, Icon, Spin, Tag, Dropdown, Avatar, Divider, Tooltip, List, Row, Col } from 'antd';
+import { Menu, Icon, Spin, Tag, Dropdown, Avatar, Divider, Tooltip, List, Row, Col, Pagination } from 'antd';
 import WindowScroller from 'react-virtualized/dist/commonjs/WindowScroller';
 import AutoSizer from 'react-virtualized/dist/commonjs/AutoSizer';
 import VList from 'react-virtualized/dist/commonjs/List';
@@ -70,7 +70,7 @@ export default class TableVirtualized extends PureComponent {
     unenquireScreen(this.enquireHandler4)
   }
   render() {
-    const { columns, dataSource, rowHeight, isRowLoaded = () => {}, loadMoreRows= () => {}} = this.props;
+    const { columns, dataSource, rowHeight, pagination = false, loading = false, isRowLoaded = () => {}, loadMoreRows= () => {}} = this.props;
     const { index } = this.state
     const rowH = rowHeight[index]
     const header = (
@@ -149,10 +149,12 @@ export default class TableVirtualized extends PureComponent {
     return (
       <div className={styles.rulerTable}>
         <List header = {index ? header : ''}>
+          { loading ? <Spin /> : '' }
           <WindowScroller>
             {infiniteLoader}
           </WindowScroller>
         </List>
+        { pagination ? <Pagination {...pagination}  /> : '' }
       </div>
     );
   }

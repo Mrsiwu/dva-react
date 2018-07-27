@@ -20,7 +20,7 @@ const FormItem = Form.Item;
 const Option = Select.Option;
 
 @connect(({ loading, global, module }) => ({
-  loading: loading.models.list,
+  loading: loading.effects['module/versionFetch'] || loading.effects['module/addVersionFetch'] || loading.effects['module/updateVersionFetch'] || loading.effects['module/addRightsFetch'],
   global,
   module
 }))
@@ -28,20 +28,33 @@ const Option = Select.Option;
 export default class ModuleVersion extends Component {
   state = {
     visibleVersion: false,
+    visibleUpdateVersion: false,
     visibleModule: false,
-    confirmLoading: false,
-    loading: false
+    selectedRowKeys: [],
+    expandedRowKeys: []
   }
 
   componentDidMount() {
+    const { dispatch, form } = this.props;
+
     this.getList()
+
+    dispatch({
+      type: 'module/fetch',
+      payload: {}
+    });
+  }
+
+  componentWillUnmount(){
+    const { dispatch } = this.props;
+
+    dispatch({
+      type: 'module/clear'
+    })
   }
 
   getList() {
     const { dispatch, form } = this.props;
-    this.setState({
-      loading: true
-    })
 
     let params = {
       versionName: form.getFieldValue('keywords')
@@ -49,13 +62,56 @@ export default class ModuleVersion extends Component {
 
     dispatch({
       type: 'module/versionFetch',
-      payload: params,
-      callback: (res) => {
-        this.setState({
-          loading: false
-        })
-      }
+      payload: params
     });
+  }
+
+  getKeys = (children) => { // 递归获取所有子集的key
+    for ( let i = 0, len = children.length; i < len; i++ ) {
+      let item = children[i]
+      this.childrenKeys.push(item.rightsId)
+      if (item.children) {
+        this.getKeys(item.children)
+      }
+    }
+  }
+
+  deleteKeys = (keys) => {  // 删除取消的key
+    if (keys.length > 0) {
+      let selectedRow = []
+      for ( let i = 0, len = keys.length; i < len; i++ ) {
+        let key = keys[i]
+        for (let j = 0, jen = this.selectedRowKeys.length; j < jen; j++) {
+          let skey = this.selectedRowKeys[j]
+          if (skey == key) {
+            this.selectedRowKeys.splice(j, 1)
+          }
+        }
+      }
+    }
+  }
+
+  getParents = (sequence, data) => {
+
+    if (sequence.length > 2) {
+
+      for ( let i = 0, len = data.length; i < len; i++ ) {
+        let item = data[i]
+        let sl = item.rightsSequence.length
+
+        if (item.rightsSequence == sequence.substring(0, sl)) {
+          this.parentKeys.push(item.rightsId)
+
+          if (sequence.length > sl) {
+            this.getParents(sequence, item.children)
+          }
+
+        }
+
+      }
+
+    }
+
   }
 // -------- handle event -----------
   handleQuery = () => {
@@ -80,18 +136,12 @@ export default class ModuleVersion extends Component {
       }
     });
   }
-  // ------ visibleVersion-------
+
   showVersion = (e, item) => {
-    console.log(e, item)
+
     const { form } = this.props;
 
-    // form.resetFields(['parentModule', 'moduleCode', 'chinaName', 'chinaExplain', 'engbName', 'engbExplain', 'moduleAddress']);
-    //
-    // form.setFields({
-    //   parentModule: {
-    //     value: '1'
-    //   }
-    // });
+    form.resetFields(['versionName']);
 
     this.setState({
       visibleVersion: true,
@@ -99,24 +149,57 @@ export default class ModuleVersion extends Component {
 
   }
 
+  showUpdateVersion = (e, item) => {
+
+    const { form } = this.props;
+
+    form.resetFields(['versionName']);
+
+    form.setFields({
+      versionName: {
+        value: item.versionName
+      }
+    });
+
+    this.schoolVersionId = item.schoolVersionId
+
+    this.setState({
+      visibleUpdateVersion: true,
+    })
+
+  }
+
+  showModule = (e, item) => {
+    const { dispatch } = this.props;
+    this.schoolVersionId = item.schoolVersionId
+    this.setState({
+      visibleModule: true,
+      selectedRowKeys: item.rightsIdList,
+      expandedRowKeys: []
+    })
+  }
+  // ------ Modal handle-------
   handleVersionOk = () => {
+
     const { dispatch, form } = this.props;
 
-    form.validateFields(['parentModule', 'moduleCode', 'chinaName', 'chinaExplain', 'engbName', 'engbExplain', 'moduleAddress'], (err, fieldsValue) => {
+    form.validateFields(['versionName'], (err, fieldsValue) => {
 
       if (err) return;
 
-      this.setState({
-        confirmLoading: true,
+      const { versionName } = fieldsValue
+      dispatch({
+        type: 'module/addVersionFetch',
+        payload: {
+          versionName: versionName
+        },
+        callback: (res) => {
+          this.setState({
+            visibleVersion: false,
+          })
+          this.getList()
+        }
       })
-      console.log(fieldsValue)
-      setTimeout(() => {
-        this.setState({
-          visibleVersion: false,
-          confirmLoading: false,
-        });
-      }, 2000);
-
     })
   }
 
@@ -125,50 +208,58 @@ export default class ModuleVersion extends Component {
       visibleVersion: false,
     })
   }
-  // ------ visibleModule -------
-  showModule = (e, item) => {
-    console.log(e, item)
-    const { form } = this.props;
 
-    form.resetFields(['versionName']);
-
-    if (item) {
-      form.setFields({
-        versionName: {
-          value: '1'
-        }
-      });
-    }
-
-    this.setState({
-      visibleModule: true,
-    })
-
-  }
-
-  handleModuleOk = () => {
+  handleUpdateVersionOk = () => {
     const { dispatch, form } = this.props;
 
-    form.validateFields(['parentModule', 'moduleCode', 'chinaName', 'chinaExplain', 'engbName', 'engbExplain', 'moduleAddress'], (err, fieldsValue) => {
+    form.validateFields(['versionName'], (err, fieldsValue) => {
 
       if (err) return;
 
-      this.setState({
-        confirmLoading: true,
-      })
-      console.log(fieldsValue)
-      setTimeout(() => {
-        this.setState({
-          visibleModule: false,
-          confirmLoading: false,
-        });
-      }, 2000);
+      const { versionName } = fieldsValue
+      dispatch({
+        type: 'module/updateVersionFetch',
+        payload: {
+          versionName: versionName,
+          versionId: this.schoolVersionId
+        },
+        callback: (res) => {
+          this.setState({
+            visibleUpdateVersion: false,
+          })
+          this.getList()
+        }
+      });
 
+    })
+  }
+
+  handleUpdateVersionCancel = () => {
+    this.setState({
+      visibleUpdateVersion: false,
+    })
+  }
+
+  handleModuleOk = () => {
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'module/addRightsFetch',
+      payload: {
+        rightsIdList: JSON.stringify(this.selectedRowKeys),
+        versionId: this.schoolVersionId
+      },
+      callback: (res) => {
+        this.setState({
+          visibleModule: false
+        })
+
+        this.getList()
+      }
     })
   }
 
   handleModuleCancel = () => {
-    console.log('Clicked cancel button');
+
     this.setState({
       visibleModule: false,
     })
@@ -215,7 +306,9 @@ export default class ModuleVersion extends Component {
     //     break;
     //   default:
     // }
-    const { version: data } = this.props.module
+    const { module, loading } = this.props
+    const { version: data } = module
+
     const rendermenu = (item) => {
       return (
         <Menu>
@@ -256,7 +349,7 @@ export default class ModuleVersion extends Component {
         width: '150px',
         render: (text, record) => (
           <span>
-            <a onClick={(e) => this.showVersion(e, record)}  href="javascript:;">编辑</a>
+            <a onClick={(e) => this.showUpdateVersion(e, record)}  href="javascript:;">编辑</a>
             <Divider type="vertical" />
             {renderMoreBtn(record)}
           </span>
@@ -264,12 +357,17 @@ export default class ModuleVersion extends Component {
       },
     ];
 
-    return <Table columns={columns} dataSource={data} pagination={false} loading={this.state.loading}/>;
+    return <Table columns={columns} dataSource={data} pagination={false} loading={loading}/>;
   }
-  // 新增/编辑版本
+  // 新增版本
   renderAddVersion() {
-    const { visibleVersion, confirmLoading } = this.state;
-    const { getFieldDecorator } = this.props.form;
+
+    const { loading, form } = this.props
+
+    const { getFieldDecorator } = form
+
+    const { visibleVersion } = this.state
+
     const formItemLayout = {
       style: {
         width: '100%',
@@ -290,7 +388,7 @@ export default class ModuleVersion extends Component {
         title="新增版本"
         visible={visibleVersion}
         onOk={this.handleVersionOk}
-        confirmLoading={confirmLoading}
+        confirmLoading={loading}
         onCancel={this.handleVersionCancel}
         className={styles.addversion}
       >
@@ -313,34 +411,120 @@ export default class ModuleVersion extends Component {
       </Modal>
     );
   }
-  // 模块设置
-  renderModuleSearch() {
-    const { form } = this.props;
+  // 编辑版本
+  renderUpdateVersion() {
+
+    const { loading, form } = this.props
+
     const { getFieldDecorator } = form;
+
+    const { visibleUpdateVersion } = this.state;
+
+    const formItemLayout = {
+      style: {
+        width: '100%',
+        marginBottom: 24,
+      },
+      labelCol: {
+        xs: { span: 24 },
+        sm: { span: 6 },
+      },
+      wrapperCol: {
+        xs: { span: 24 },
+        sm: { span: 16 },
+      },
+    };
+
     return (
-      <Form layout="inline" style={{ marginBottom: 15 }}>
-        <Row className={styles.rowForm}>
-          <Col md={12} sm={24}>
-            <FormItem label="关键词">
-              {getFieldDecorator('keywords')(<Input placeholder="搜索模块名称、模块地址查询" className={styles.inputbox} />)}
-            </FormItem>
-          </Col>
-          <Col md={12} sm={24}>
-            <span className={styles.buttonBox}>
-              <Button type="primary" htmlType="submit">
-                查询
-              </Button>
-              <Button style={{ marginLeft: 8 }}>重置</Button>
-            </span>
-          </Col>
-        </Row>
-      </Form>
-    )
+      <Modal
+        title="编辑版本"
+        visible={visibleUpdateVersion}
+        onOk={this.handleUpdateVersionOk}
+        confirmLoading={loading}
+        onCancel={this.handleUpdateVersionCancel}
+        className={styles.addversion}
+      >
+        <Form layout="inline" hideRequiredMark className={styles.formCol}>
+
+          <FormItem {...formItemLayout} label="版本名称">
+            {getFieldDecorator('versionName',  {
+              rules: [
+                {
+                  required: true,
+                  message: '请输入版本名称',
+                },
+              ],
+            })(
+              <Input  placeholder="请输入版本名称"  />
+            )}
+          </FormItem>
+
+        </Form>
+      </Modal>
+    );
   }
+  // 模块设置
   // 模块列表
   renderModuleTable() {
+
     const { form, module } = this.props;
-    const { list: data } = module
+
+    const { selectedRowKeys, expandedRowKeys } = this.state
+
+    // const { list: data } = module
+    const data = [
+        {
+            "children": [
+                {
+                    "children": [
+                        {
+                            "rightsId": 100000,
+                            "rightsName": "字字字",
+                            "rightsSequence": '010101'
+                        },
+                        {
+                            "rightsId": 100002,
+                            "rightsName": "字字字",
+                            "rightsSequence": '010102'
+                        }
+                    ],
+                    "descriptionEnglish": "测试内容ed84",
+                    "description": "测试内容563u测试内容563u测试内容563u测试内容563u测试内容563u测试内容563u测试内容563u测试内容563u测试内容563u",
+                    "gmtModified": "1991-01-27",
+                    "rightsId": 1000,
+                    "rightsNameEnglish": "测试内容mhsv",
+                    "rightsName": "字字字字",
+                    "rightsSequence": '0101',
+                    "rightsUrl": "测试内容tf51"
+                },
+                {
+                    "children": [
+                        {
+                            "rightsId": 100001,
+                            "rightsName": "字字字字字",
+                            "rightsSequence": '010201'
+                        }
+                    ],
+                    "descriptionEnglish": "测试内容ed84",
+                    "description": "测试内容563u测试内容563u测试内容563u测试内容563u测试内容563u测试内容563u测试内容563u",
+                    "gmtModified": "2015-03-21",
+                    "rightsId": 1001,
+                    "rightsNameEnglish": "测试内容mhsv",
+                    "rightsName": "字字字",
+                    "rightsSequence": '0102',
+                    "rightsUrl": "测试内容tf51"
+                }
+            ],
+            "description": "测试内容04r6",
+            "descriptionEnglish": "测试内容jyj0",
+            "gmtModified": "1974-01-20",
+            "rightsId": 10,
+            "rightsNameEnglish": "测试内容89q5",
+            "rightsName": "汉汉汉汉",
+            "rightsSequence": '01',
+            "rightsUrl": "测试内容jxpx"
+        },
+    ]
     const columns = [
       {
         title: '模块名称',
@@ -356,33 +540,74 @@ export default class ModuleVersion extends Component {
     ];
 
     const rowSelection = {
+      selectedRowKeys: selectedRowKeys,
       onChange: (selectedRowKeys, selectedRows) => {
-        console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows);
+        this.selectedRowKeys = selectedRowKeys // 获得 key (array), 单选更新
       },
       onSelect: (record, selected, selectedRows) => {
-        console.log(record, selected, selectedRows);
+
+        this.childrenKeys = []
+
+        this.parentKeys = []
+
+        if (record.children) { // 有子集特殊处理
+          this.getKeys(record.children)
+        }
+
+        if (selected) {
+
+          this.getParents(record.rightsSequence.toString(), data)
+
+          this.selectedRowKeys = Array.from(new Set([...this.selectedRowKeys, ...this.childrenKeys, ...this.parentKeys]))
+
+        } else {
+
+          this.deleteKeys(this.childrenKeys)
+
+        }
+
+        this.setState({
+          selectedRowKeys: this.selectedRowKeys
+        })
+
       },
       onSelectAll: (selected, selectedRows, changeRows) => {
-        console.log(selected, selectedRows, changeRows);
+        this.setState({
+          selectedRowKeys: this.selectedRowKeys
+        })
       },
     };
 
-    return <Table columns={columns} dataSource={data} rowSelection={rowSelection}  pagination={false} />;
+    const tableProperty = {
+      rowKey: 'rightsId',
+      columns: columns,
+      dataSource: data,
+      pagination: false,
+      rowSelection: rowSelection,
+      expandedRowKeys: expandedRowKeys,
+      onExpandedRowsChange: (expandedRows) => {
+        this.setState({
+          expandedRowKeys: expandedRows
+        })
+      }
+    }
+
+    return <Table {...tableProperty} />;
   }
   // 模块弹出框
   renderModuleSetting() {
-    const { visibleModule, confirmLoading } = this.state;
+    const { loading } = this.props
+    const { visibleModule } = this.state;
     return (
       <Modal
         title="模块设置"
         visible={visibleModule}
         onOk={this.handleModuleOk}
-        confirmLoading={confirmLoading}
+        confirmLoading={loading}
         onCancel={this.handleModuleCancel}
         className={styles.editModule}
         width={880}
       >
-        {this.renderModuleSearch()}
         {this.renderModuleTable()}
       </Modal>
     );
@@ -397,6 +622,8 @@ export default class ModuleVersion extends Component {
           {this.renderTableList()}
 
           {this.renderAddVersion()}
+
+          {this.renderUpdateVersion()}
 
           {this.renderModuleSetting()}
         </Card>

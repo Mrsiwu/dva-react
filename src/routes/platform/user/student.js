@@ -14,57 +14,503 @@ import {
   Button,
   Modal,
   Select,
+  Badge,
+  Avatar,
 } from 'antd';
+import TableVirtualized from '../../../components/TableVirtualized';
 import styles from './user.less';
 
 const FormItem = Form.Item;
-const columns = [{
-  title: 'Name',
-  dataIndex: 'name',
-  key: 'name',
-  render: text => <a href="javascript:;">{text}</a>,
-}, {
-  title: 'Age',
-  dataIndex: 'age',
-  key: 'age',
-}, {
-  title: 'Address',
-  dataIndex: 'address',
-  key: 'address',
-}, {
-  title: 'Action',
-  key: 'action',
-  render: (text, record) => (
-    <span>
-      <a href="javascript:;">Action 一 {record.name}</a>
-      <Divider type="vertical" />
-      <a href="javascript:;">Delete</a>
-      <Divider type="vertical" />
-      <a href="javascript:;" className="ant-dropdown-link">
-        More actions <Icon type="down" />
-      </a>
-    </span>
-  ),
-}];
+const Option = Select.Option;
+const data = [
+  {
+    key: 1,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  },
+  {
+    key: 2,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  },
+  {
+    key: 3,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  },
+  {
+    key: 4,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  },
+  {
+    key: 5,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  },
+  {
+    key: 6,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  },
+  {
+    key: 7,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  },
+  {
+    key: 8,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  },
+  {
+    key: 9,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  },
+  {
+    key: 10,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  },
+  {
+    key: 11,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  },
+  {
+    key: 12,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  },
+  {
+    key: 13,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  },
+  {
+    key: 14,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  },
+  {
+    key: 15,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  },
+  {
+    key: 16,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  },
+  {
+    key: 17,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  },
+  {
+    key: 18,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  },
+  {
+    key: 19,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  },
+  {
+    key: 20,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  },
+  {
+    key: 21,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  },
+  {
+    key: 22,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  },
+  {
+    key: 23,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  },
+  {
+    key: 24,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  },
+  {
+    key: 25,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  },
+  {
+    key: 26,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  },
+  {
+    key: 27,
+    Avatar:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    name: '王晓敏',
+    sex: '1',
+    account: 'wangxming',
+    platform: 'e板会云技术平台',
+    logo:'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+    school: 'E板会测试',
+    location: 'test',
+    domain: '',
+    startTime: '2018-12-01',
+    time: '00:00:00',
+    address: '浙江-杭州',
+    ip: '101.69.252.186',
+    contact: '18314875040',
+    status: '1'
+  }]
 
-const data = [{
-  key: '1',
-  name: 'John Brown',
-  age: 32,
-  address: 'New York No. 1 Lake Park',
-}, {
-  key: '2',
-  name: 'Jim Green',
-  age: 42,
-  address: 'London No. 1 Lake Park',
-}, {
-  key: '3',
-  name: 'Joe Black',
-  age: 32,
-  address: 'Sidney No. 1 Lake Park',
-}];
-
-@connect(({ global }) => ({ global }))
+@connect(({ rule, global }) => ({ rule, global }))
 @Form.create()
 export default class UserStudent extends Component {
   state = {
@@ -72,7 +518,26 @@ export default class UserStudent extends Component {
     confirmLoading: false,
   };
 
-  componentDidMount() {}
+  componentDidMount() {
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'rule/fetch',
+      payload: {
+        currentPage: 1,
+        pageSize: 100,
+      }
+    });
+  }
+	componentWillUnmount() {
+	}
+  showModal = (e, item) => {
+    const { form } = this.props;
+
+    this.setState({
+      visible: true,
+    })
+
+  }
 
   handleOk = () => {
     this.setState({
@@ -101,9 +566,9 @@ export default class UserStudent extends Component {
     return (
       <Form layout="inline" style={{ marginBottom: 15 }}>
         <Row className={styles.rowForm}>
-          <Col xl={6} lg={18} md={48} sm={72}>
-            <FormItem label="选择服务商">
-              {getFieldDecorator('status')(
+          <Col xl={6} lg={12} md={12} sm={12}>
+            <FormItem label="选择平台">
+              {getFieldDecorator('platform')(
                 <Select placeholder="请选择" style={{ width: '100%' }}>
                   <Option value="0">全部</Option>
                   <Option value="1">已处理</Option>
@@ -113,12 +578,24 @@ export default class UserStudent extends Component {
               )}
             </FormItem>
           </Col>
-          <Col xl={6} lg={18} md={48} sm={72}>
-            <FormItem label="关键词">
-              {getFieldDecorator('no')(<Input placeholder="搜索账号、姓名" className={styles.inputbox} />)}
+          <Col xl={6} lg={12} md={12} sm={12}>
+            <FormItem label="选择网校">
+              {getFieldDecorator('school')(
+                <Select placeholder="请选择" style={{ width: '100%' }}>
+                  <Option value="0">全部</Option>
+                  <Option value="1">已处理</Option>
+                  <Option value="2">未处理</Option>
+                  <Option value="3">已删除</Option>
+                </Select>
+              )}
             </FormItem>
           </Col>
-          <Col xl={6} lg={18} md={48} sm={72}>
+          <Col xl={6} lg={10} md={12} sm={12}>
+            <FormItem label="关键词">
+              {getFieldDecorator('keywords')(<Input placeholder="搜索账号、姓名" className={styles.inputbox} />)}
+            </FormItem>
+          </Col>
+          <Col xl={6} lg={10} md={12} sm={12}>
             <span className={styles.buttonBox}>
               <Button type="primary" htmlType="submit">
                 查询
@@ -132,89 +609,183 @@ export default class UserStudent extends Component {
   }
   // 模块列表
   renderTableList() {
-    // const { global } = this.props;
-    // const { lang = 'zhCN' } = global;
-    // let language;
-    // switch (lang) {
-    //   case 'zhCN':
-    //     language = {};
-    //     break;
-    //   case 'enGB':
-    //     language = {};
-    //     break;
-    //   default:
-    // }
+    const { rule, global } = this.props;
 
-    const menu = (
-      <Menu>
-        <Menu.Item>
-          <a>编辑</a>
-        </Menu.Item>
-        <Menu.Item>
-          <a>删除</a>
-        </Menu.Item>
-      </Menu>
-    );
+    const { collapsed } = global
 
-    const MoreBtn = () => (
-      <Dropdown overlay={menu}>
-        <a>
-          更多 <Icon type="down" />
-        </a>
-      </Dropdown>
-    );
+    // const data = rule.data.list
 
+    const rendermenu = (item) => {
+      return (
+        <Menu>
+          <Menu.Item>
+            <a onClick={(e) => this.showEditPassWordModal(e, item)}>修改密码</a>
+          </Menu.Item>
+          <Menu.Item style={{textAlign:'center'}}>
+            <a onClick={(e) => this.handleDelete(e, item)}>删除</a>
+          </Menu.Item>
+          <Menu.Item style={{textAlign:'center'}}>
+            <a onClick={(e) => this.handleDelete(e, item)}>锁定</a>
+          </Menu.Item>
+        </Menu>
+      )
+    };
+
+    const renderMoreBtn = (item) => {
+      return (
+        <Dropdown overlay={rendermenu(item)}>
+          <a>
+            更多 <Icon type="down" />
+          </a>
+        </Dropdown>
+      )
+    }
+    const statusMap = ['default', 'processing', 'success', 'error'];
+    const status = ['关闭', '运行中', '已上线', '异常'];
     const columns = [
       {
-        title: '用户',
-        dataIndex: 'name',
-        key: 'name',
+        title: '账户',
+        key: 'account',
+        width:{
+          xl: 4,
+          lg: 6,
+          md: 8,
+          sm: 8,
+          xs: 12
+        },
+        render: (record) => (
+          <span>
+            <Avatar src={record.Avatar} size="large" style={{float:'left',marginRight:'8px'}}/>
+            <span style={{float:'left'}}>{record.name}</span><Icon type="question" style={{ fontSize: 16, color: '#08c', float:'left'}} /><br/>
+            <span style={{float:'left'}}>{record.account}</span>
+          </span>
+        )
       },
       {
         title: '所属服务商',
-        dataIndex: 'address',
-        key: 'address',
+        key: 'platform',
+        width:{
+          xl: 3,
+          lg: 6,
+          md: 8,
+          sm: 7,
+          xs: 12
+        },
+        render: (record) => (
+          <span style={{lineHeight: '42px'}}>
+            {record.platform}
+          </span>
+        )
       },
       {
         title: '所属网校',
-        dataIndex: 'age',
-        key: 'age',
+        key: 'school',
+        width:{
+          xl: 4,
+          lg: 7,
+          md: 8,
+          sm: 9,
+          xs: 24
+        },
+        render: (record) => (
+          <span>
+            <Avatar src={record.logo} size="large" style={{float:'left',marginRight:'8px'}}/>
+            <span style={{float:'left'}}>{record.school}</span><br/>
+            <span style={{float:'left'}}>{record.location}'|独立域名：'{record.domain?record.domain: '无'}</span>
+          </span>
+        )
       },
       {
         title: '注册时间',
-        dataIndex: 'address',
-        key: 'address2',
+        key: 'startTime',
+        width:{
+          xl: 2,
+          lg: 5,
+          md: 8,
+          sm: 8,
+          xs: 12
+        },
+        render: (record) => (
+          <span>
+            <span>{record.startTime}</span><br/>
+            <span>{record.time}</span>
+          </span>
+        )
       },
       {
         title: '注册地',
-        dataIndex: 'agea',
-        key: 'agea',
+        key: 'age1',
+        width:{
+          xl: 3,
+          lg: 6,
+          md: 8,
+          sm: 7,
+          xs: 12
+        },
+        render: (record) => (
+          <span>
+            <span>{record.address}</span><br/>
+            <span>{record.ip}</span>
+          </span>
+        )
       },
       {
         title: '联系方式',
-        dataIndex: 'ageb',
-        key: 'ageb',
+        key: 'contact',
+        width:{
+          xl: 3,
+          lg: 6,
+          md: 8,
+          sm: 9,
+          xs: 12
+        },
+        render: (record) => (
+          <span style={{lineHeight: '42px'}}>
+            {record.contact}
+          </span>
+        )
       },
       {
         title: '状态',
-        dataIndex: 'agec',
-        key: 'agec',
+        key: 'status',
+        width:{
+          xl: 2,
+          lg: 7,
+          md: 8,
+          sm: 8,
+          xs: 12
+        },
+        render: (record) => (
+          <span style={{lineHeight: '42px'}}>
+            <Badge status={statusMap[record.status]} text={status[record.status]} />
+          </span>
+        )
       },
       {
         title: '操作',
         key: 'action',
-        render: () => (
-          //text, record
-          <span>
-            <a href="javascript:;">新增</a>
+        width: {
+          xl: 3,
+          lg: 5,
+          md: 8,
+          sm: 8,
+          xs: 12
+        },
+        render: (record) => (
+          <span style={{lineHeight: '42px'}}>
+            <a onClick={(e) => this.showModal(e, record)}  href="javascript:;">编辑</a>
             <Divider type="vertical" />
-            <MoreBtn />
+            {renderMoreBtn(record)}
           </span>
         ),
       },
     ];
 
-    return <Table columns={columns} dataSource={data} />;
+    return (
+      <div >
+        <TableVirtualized columns={columns} dataSource={data} rowHeight={[430,190,190,130,76]} />
+      </div>
+    )
   }
   // 新增/编辑模块
   renderAddModal() {
@@ -234,6 +805,44 @@ export default class UserStudent extends Component {
         sm: { span: 16 },
       },
     };
+
+    return (
+      <Modal
+        title="新增模块"
+        visible={visible}
+        onOk={this.handleOk}
+        confirmLoading={confirmLoading}
+        onCancel={this.handleCancel}
+      >
+        <Form layout="inline" className={styles.formCol}>
+          <FormItem {...formItemLayout} label="上级模块">
+            {getFieldDecorator('parentModule')(
+              <Input type="text" placeholder="由6-20位英文、数字且字母开头组成" />
+            )}
+          </FormItem>
+          <FormItem {...formItemLayout} label="代码">
+            {getFieldDecorator('code')(<Input type="password" placeholder="请输入6-18位密码" />)}
+          </FormItem>
+          <FormItem {...formItemLayout} label="中文名称">
+            {getFieldDecorator('chinaName')(
+              <Input type="password" placeholder="再次输入密码" onBlur={this.handleConfirmBlur} />
+            )}
+          </FormItem>
+          <FormItem {...formItemLayout} label="中文说明">
+            {getFieldDecorator('chinaExplain')(
+              <Input placeholder="填写用户真实姓名" onBlur={this.handleConfirmBlur} />
+            )}
+          </FormItem>
+          <FormItem {...formItemLayout} label="英文名称">
+            {getFieldDecorator('company')(<Input placeholder="公司或代理商名称" />)}
+          </FormItem>
+
+          <FormItem {...formItemLayout} label="英文说明">
+            {getFieldDecorator('mobile')(<Input placeholder="11位手机号,用于提现安全验证" />)}
+          </FormItem>
+        </Form>
+      </Modal>
+    );
   }
 
   // -------- 主板 ---------------
