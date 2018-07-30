@@ -1,5 +1,6 @@
 import React, { Component, Fragment } from 'react';
 import { connect } from "dva";
+import classNames from "classnames";
 import moment from 'moment';
 import { 
   Row,
@@ -147,9 +148,11 @@ export default class SearchList extends Component {
   }
   //充值短信条数选择处理
   chargeNumberChange = num => {
+    const { form } = this.props;
+    form.resetFields('otherNumber');
     this.setState({
       SmsNumber: num,
-      buttonFocus: num
+      buttonFocus: num,
     });
   }
   //取消短信充值
@@ -215,18 +218,18 @@ export default class SearchList extends Component {
     
     console.log(buttonFocus);
     
-    let xc1 = {
+    let xc1 = classNames ({
       [styles.btnBac]:true,
       [styles.focus]: buttonFocus === 5000 ? true : false
-    }
-    let xc2 = {
+    });
+    let xc2 = classNames({
       [styles.btnBac]:true,
       [styles.focus]: buttonFocus === 10000 ? true : false
-    }
-    let xc3 = {
+    });
+    let xc3 = classNames({
       [styles.btnBac]:true,
       [styles.focus]: buttonFocus === 100000 ? true : false
-    }
+    });
     return (
       <Row>
         <Col sm={8} md={8} lg={8} xl={8}><Button onClick={() => this.chargeNumberChange(5000)} style={{padding:'0px 22.5px'}} className={xc1}>5000条</Button></Col>
